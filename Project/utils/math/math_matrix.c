@@ -205,20 +205,32 @@ void math_matrix_multiply(const math_matrix_t *a, const math_matrix_t *b, math_m
         return;
     }
     
-    arm_matrix_instance_f32 arm_a, arm_b, arm_result;
-    arm_a.numRows = a->rows;
-    arm_a.numCols = a->cols;
-    arm_a.pData = a->data;
+    // 检查是否为自引用 (a或b与result相同)
+    float* temp = NULL;
+    if (result == a || result == b) {
+        temp = (float*)__math_utils_malloc(result->rows * result->cols * sizeof(float));
+        if (!temp) return;
+    }
     
-    arm_b.numRows = b->rows;
-    arm_b.numCols = b->cols;
-    arm_b.pData = b->data;
+    for (uint32_t i = 0; i < a->rows; i++) {
+        for (uint32_t j = 0; j < b->cols; j++) {
+            float sum = 0.0f;
+            for (uint32_t k = 0; k < a->cols; k++) {
+                sum += a->data[i * a->cols + k] * b->data[k * b->cols + j];
+            }
+            
+            if (temp) {
+                temp[i * result->cols + j] = sum;
+            } else {
+                result->data[i * result->cols + j] = sum;
+            }
+        }
+    }
     
-    arm_result.numRows = result->rows;
-    arm_result.numCols = result->cols;
-    arm_result.pData = result->data;
-    
-    arm_mat_mult_f32(&arm_a, &arm_b, &arm_result);
+    if (temp) {
+        memcpy(result->data, temp, result->rows * result->cols * sizeof(float));
+        __math_utils_free(temp);
+    }
 }
 
 void math_matrix_scale(const math_matrix_t *src, float scalar, math_matrix_t *result) {
@@ -336,17 +348,77 @@ uint8_t math_matrix_inverse(const math_matrix_t *src, math_matrix_t *dst) {
         return 0;
     }
     
-    arm_matrix_instance_f32 arm_src, arm_dst;
-    arm_src.numRows = src->rows;
-    arm_src.numCols = src->cols;
-    arm_src.pData = src->data;
+    // 使用Gauss-Jordan消元法求逆矩阵
+    uint32_t n = src->rows;
     
-    arm_dst.numRows = dst->rows;
-    arm_dst.numCols = dst->cols;
-    arm_dst.pData = dst->data;
+    // 创建增广矩阵 [A|I]
+    math_matrix_t* aug = math_matrix_create(n, 2 * n);
+    if (!aug) return 0;
     
-    arm_status status = arm_mat_inverse_f32(&arm_src, &arm_dst);
-    return (status == ARM_MATH_SUCCESS) ? 1 : 0;
+    // 初始化增广矩阵
+    for (uint32_t i = 0; i < n; i++) {
+        for (uint32_t j = 0; j < n; j++) {
+            // 左半部分为原矩阵
+            aug->data[i * (2 * n) + j] = src->data[i * n + j];
+            // 右半部分为单位矩阵
+            aug->data[i * (2 * n) + j + n] = (i == j) ? 1.0f : 0.0f;
+        }
+    }
+    
+    // Gauss-Jordan消元
+    for (uint32_t i = 0; i < n; i++) {
+        // 查找主元
+        float max_val = fabsf(aug->data[i * (2 * n) + i]);
+        uint32_t max_row = i;
+        
+        for (uint32_t k = i + 1; k < n; k++) {
+            if (fabsf(aug->data[k * (2 * n) + i]) > max_val) {
+                max_val = fabsf(aug->data[k * (2 * n) + i]);
+                max_row = k;
+            }
+        }
+        
+        // 如果主元接近于零，矩阵不可逆
+        if (max_val < FLOAT_EPSILON) {
+            math_matrix_destroy(aug);
+            return 0;
+        }
+        
+        // 交换行
+        if (max_row != i) {
+            for (uint32_t j = 0; j < 2 * n; j++) {
+                float temp = aug->data[i * (2 * n) + j];
+                aug->data[i * (2 * n) + j] = aug->data[max_row * (2 * n) + j];
+                aug->data[max_row * (2 * n) + j] = temp;
+            }
+        }
+        
+        // 对角线元素归一化
+        float pivot = aug->data[i * (2 * n) + i];
+        for (uint32_t j = 0; j < 2 * n; j++) {
+            aug->data[i * (2 * n) + j] /= pivot;
+        }
+        
+        // 消元
+        for (uint32_t k = 0; k < n; k++) {
+            if (k != i) {
+                float factor = aug->data[k * (2 * n) + i];
+                for (uint32_t j = 0; j < 2 * n; j++) {
+                    aug->data[k * (2 * n) + j] -= factor * aug->data[i * (2 * n) + j];
+                }
+            }
+        }
+    }
+    
+    // 提取逆矩阵
+    for (uint32_t i = 0; i < n; i++) {
+        for (uint32_t j = 0; j < n; j++) {
+            dst->data[i * n + j] = aug->data[i * (2 * n) + j + n];
+        }
+    }
+    
+    math_matrix_destroy(aug);
+    return 1;
 }
 
 uint8_t math_matrix_lu_decompose(const math_matrix_t *src, math_matrix_t *L, math_matrix_t *U, math_matrix_t *P) {
@@ -441,22 +513,66 @@ uint8_t math_matrix_solve(const math_matrix_t *A, const math_matrix_t *b, math_m
     
     uint32_t n = A->rows;
     
-    // 先计算矩阵的逆
-    math_matrix_t *A_inv = math_matrix_create(n, n);
-    if (!A_inv) {
-        return 0;
+    // 创建增广矩阵 [A|b]
+    math_matrix_t* aug = math_matrix_create(n, n + 1);
+    if (!aug) return 0;
+    
+    // 初始化增广矩阵
+    for (uint32_t i = 0; i < n; i++) {
+        for (uint32_t j = 0; j < n; j++) {
+            aug->data[i * (n + 1) + j] = A->data[i * n + j];
+        }
+        aug->data[i * (n + 1) + n] = b->data[i];
     }
     
-    uint8_t success = math_matrix_inverse(A, A_inv);
-    if (!success) {
-        math_matrix_destroy(A_inv);
-        return 0;
+    // 高斯消元法
+    for (uint32_t i = 0; i < n; i++) {
+        // 寻找主元
+        uint32_t max_row = i;
+        float max_val = fabsf(aug->data[i * (n + 1) + i]);
+        
+        for (uint32_t k = i + 1; k < n; k++) {
+            if (fabsf(aug->data[k * (n + 1) + i]) > max_val) {
+                max_val = fabsf(aug->data[k * (n + 1) + i]);
+                max_row = k;
+            }
+        }
+        
+        if (max_val < FLOAT_EPSILON) {
+            math_matrix_destroy(aug);
+            return 0; // 奇异矩阵
+        }
+        
+        // 交换行
+        if (max_row != i) {
+            for (uint32_t j = 0; j <= n; j++) {
+                float temp = aug->data[i * (n + 1) + j];
+                aug->data[i * (n + 1) + j] = aug->data[max_row * (n + 1) + j];
+                aug->data[max_row * (n + 1) + j] = temp;
+            }
+        }
+        
+        // 消元
+        for (uint32_t k = i + 1; k < n; k++) {
+            float factor = aug->data[k * (n + 1) + i] / aug->data[i * (n + 1) + i];
+            aug->data[k * (n + 1) + i] = 0.0f;
+            
+            for (uint32_t j = i + 1; j <= n; j++) {
+                aug->data[k * (n + 1) + j] -= factor * aug->data[i * (n + 1) + j];
+            }
+        }
     }
     
-    // 然后计算 x = A_inv * b
-    math_matrix_multiply(A_inv, b, x);
+    // 回代求解
+    for (int32_t i = n - 1; i >= 0; i--) {
+        float sum = aug->data[i * (n + 1) + n];
+        for (uint32_t j = i + 1; j < n; j++) {
+            sum -= aug->data[i * (n + 1) + j] * x->data[j];
+        }
+        x->data[i] = sum / aug->data[i * (n + 1) + i];
+    }
     
-    math_matrix_destroy(A_inv);
+    math_matrix_destroy(aug);
     return 1;
 }
 

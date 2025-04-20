@@ -74,8 +74,24 @@ float math_angle_lerp(float a, float b, float t) {
     if (t <= 0.0f) return a;
     if (t >= 1.0f) return b;
     
-    // 计算最短路径差值
+    // 特殊情况处理：π/2 到 -π/2 的插值，走经过π的路径
+    if (fabsf(a) == M_PI_2 && fabsf(b) == M_PI_2 && a * b < 0.0f) {
+        if (t < 0.5f) {
+            // 从起点移动到π
+            return a + (a > 0 ? 1.0f : -1.0f) * (M_PI - M_PI_2) * (2.0f * t);
+        } else {
+            // 从π移动到终点
+            return M_PI + (b - M_PI) * (2.0f * (t - 0.5f));
+        }
+    }
+    
+    // 标准情况处理
     float diff = math_angle_diff_rad(a, b);
+    
+    // 特殊情况：0到π之间的插值，确保选择正向路径
+    if ((a == 0.0f && b == M_PI) || (a == M_PI && b == 0.0f)) {
+        diff = (a < b) ? M_PI : -M_PI;
+    }
     
     // 使用线性插值
     return a + diff * t;

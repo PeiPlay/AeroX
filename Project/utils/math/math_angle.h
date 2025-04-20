@@ -9,10 +9,10 @@ extern "C" {
 #include "arm_math.h"
 
 // 角度归一化到 [0, 2π)
-float math_normalize_angle_0_2pi(float angle);
+float math_normalize_radian_0_2pi(float angle);
 
 // 角度归一化到 [-π, π)
-float math_normalize_angle_pi(float angle);
+float math_normalize_radian_pi(float angle);
 
 // 角度归一化到 [0, 360)
 float math_normalize_angle_0_360(float angle);
