@@ -39,6 +39,12 @@ static inline float math_square(float x) {
     return x * x;
 }
 
+static inline float math_sqrtf(float x) {
+    float result;
+    arm_sqrt_f32(x, &result);
+    return result;
+}
+
 // 平均值计算
 float math_mean(const float *data, uint32_t length);
 

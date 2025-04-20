@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32H743xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Drivers/CMSIS/DSP;../Project/utils/math</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Drivers/CMSIS/DSP;../Project/utils/math;..\Project\Attitude;..\Project\Attitude\IMU;..\Project\Test</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -718,6 +718,81 @@
               <FileName>math_utils.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Project\utils\math\math_utils.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Attitude</GroupName>
+          <Files>
+            <File>
+              <FileName>Attitude.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\Attitude\Attitude.h</FilePath>
+            </File>
+            <File>
+              <FileName>AttitudeManager.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\Attitude\AttitudeManager.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>MahonyAHRS.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\Attitude\MahonyAHRS.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>MahonyAHRS.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\Attitude\MahonyAHRS.h</FilePath>
+            </File>
+            <File>
+              <FileName>QuaternionEKF.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\Attitude\QuaternionEKF.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>QuaternionEKF.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\Attitude\QuaternionEKF.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Attitude/IMU</GroupName>
+          <Files>
+            <File>
+              <FileName>BMI088.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\Attitude\IMU\BMI088.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>BMI088.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\Attitude\IMU\BMI088.h</FilePath>
+            </File>
+            <File>
+              <FileName>BMI088_def.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\Attitude\IMU\BMI088_def.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Test</GroupName>
+          <Files>
+            <File>
+              <FileName>test.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Project\Test\test.c</FilePath>
+            </File>
+            <File>
+              <FileName>test.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\Test\test.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>test.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\Test\test.h</FilePath>
             </File>
           </Files>
         </Group>

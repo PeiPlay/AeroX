@@ -100,6 +100,9 @@ public:
     Matrix transpose() const;
     bool inverse(Matrix& result) const;
     float determinant() const;
+
+    bool setIdentity();
+    bool setZero();
     
     // 获取矩阵尺寸
     uint32_t rows() const { return m_matrix->rows; }

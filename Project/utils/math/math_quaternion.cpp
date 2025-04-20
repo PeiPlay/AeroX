@@ -36,26 +36,26 @@ Quaternion Quaternion::fromRotationMatrix(const float matrix[9]) {
     float trace = matrix[0] + matrix[4] + matrix[8];
     
     if (trace > 0.0f) {
-        float s = 0.5f / sqrtf(trace + 1.0f);
+        float s = 0.5f / math_sqrtf(trace + 1.0f);
         q.w = 0.25f / s;
         q.x = (matrix[7] - matrix[5]) * s;
         q.y = (matrix[2] - matrix[6]) * s;
         q.z = (matrix[3] - matrix[1]) * s;
     } else {
         if (matrix[0] > matrix[4] && matrix[0] > matrix[8]) {
-            float s = 2.0f * sqrtf(1.0f + matrix[0] - matrix[4] - matrix[8]);
+            float s = 2.0f * math_sqrtf(1.0f + matrix[0] - matrix[4] - matrix[8]);
             q.w = (matrix[7] - matrix[5]) / s;
             q.x = 0.25f * s;
             q.y = (matrix[1] + matrix[3]) / s;
             q.z = (matrix[2] + matrix[6]) / s;
         } else if (matrix[4] > matrix[8]) {
-            float s = 2.0f * sqrtf(1.0f + matrix[4] - matrix[0] - matrix[8]);
+            float s = 2.0f * math_sqrtf(1.0f + matrix[4] - matrix[0] - matrix[8]);
             q.w = (matrix[2] - matrix[6]) / s;
             q.x = (matrix[1] + matrix[3]) / s;
             q.y = 0.25f * s;
             q.z = (matrix[5] + matrix[7]) / s;
         } else {
-            float s = 2.0f * sqrtf(1.0f + matrix[8] - matrix[0] - matrix[4]);
+            float s = 2.0f * math_sqrtf(1.0f + matrix[8] - matrix[0] - matrix[4]);
             q.w = (matrix[3] - matrix[1]) / s;
             q.x = (matrix[2] + matrix[6]) / s;
             q.y = (matrix[5] + matrix[7]) / s;
@@ -68,7 +68,7 @@ Quaternion Quaternion::fromRotationMatrix(const float matrix[9]) {
 
 // 从轴角表示法创建四元数
 Quaternion Quaternion::fromAxisAngle(float x, float y, float z, float angle_rad) {
-    float length = sqrtf(x*x + y*y + z*z);
+    float length = math_sqrtf(x*x + y*y + z*z);
     if (length < FLOAT_EPSILON) {
         return Quaternion(); // 返回单位四元数
     }
@@ -86,7 +86,7 @@ Quaternion Quaternion::fromAxisAngle(float x, float y, float z, float angle_rad)
 
 // 基本操作
 float Quaternion::norm() const {
-    return sqrtf(w*w + x*x + y*y + z*z);
+    return math_sqrtf(w*w + x*x + y*y + z*z);
 }
 
 void Quaternion::normalize() {
@@ -217,7 +217,7 @@ void Quaternion::toAxisAngle(float& x, float& y, float& z, float& angle_rad) con
     }
 
     angle_rad = 2.0f * arm_cos_f32(q.w);
-    float s = sqrtf(1.0f - q.w * q.w);
+    float s = math_sqrtf(1.0f - q.w * q.w);
     
     if (s < FLOAT_EPSILON) {
         // 避免被零除

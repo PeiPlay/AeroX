@@ -203,6 +203,36 @@ float Matrix::determinant() const {
     return math_matrix_determinant(m_matrix);
 }
 
+bool Matrix::setIdentity() {
+    if (!m_matrix) {
+        return false;
+    }
+    if(m_matrix->rows != m_matrix->cols) {
+        return false;
+    }
+    for (uint32_t i = 0; i < m_matrix->rows; i++) {
+        for (uint32_t j = 0; j < m_matrix->cols; j++) {
+            if (i == j) {
+                m_matrix->data[i * m_matrix->cols + j] = 1.0f;
+            } else {
+                m_matrix->data[i * m_matrix->cols + j] = 0.0f;
+            }
+        }
+    }
+    return true;
+}
+bool Matrix::setZero()
+{
+    if (!m_matrix) {
+        return false;
+    }
+    for (uint32_t i = 0; i < m_matrix->rows * m_matrix->cols; i++) {
+        m_matrix->data[i] = 0.0f;
+    }
+    return true;
+}
+
+
 // 静态工厂方法
 Matrix Matrix::zeros(uint32_t rows, uint32_t cols) {
     math_matrix_t* matrix = math_matrix_create_zeros(rows, cols);

@@ -66,7 +66,6 @@ float math_atan2(float y, float x) {
             return 0.0f;  // 不确定的情况
         }
     }
-
     return atan2f(y, x);
 }
 
