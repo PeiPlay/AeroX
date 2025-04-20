@@ -330,7 +330,7 @@
             <uGnu>1</uGnu>
             <useXO>0</useXO>
             <v6Lang>3</v6Lang>
-            <v6LangP>3</v6LangP>
+            <v6LangP>9</v6LangP>
             <vShortEn>1</vShortEn>
             <vShortWch>1</vShortWch>
             <v6Lto>0</v6Lto>
@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32H743xx</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;..\Drivers\CMSIS\DSP</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc;../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32H7xx/Include;../Drivers/CMSIS/Include;../Drivers/CMSIS/DSP;../Project/utils/math</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -638,6 +638,86 @@
               <FileName>port.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/port.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>utils/math</GroupName>
+          <Files>
+            <File>
+              <FileName>math_angle.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Project\utils\math\math_angle.c</FilePath>
+            </File>
+            <File>
+              <FileName>math_angle.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_angle.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_bits.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Project\utils\math\math_bits.c</FilePath>
+            </File>
+            <File>
+              <FileName>math_bits.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_bits.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Project\utils\math\math_common.c</FilePath>
+            </File>
+            <File>
+              <FileName>math_common.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_common.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_const.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_const.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_matrix.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Project\utils\math\math_matrix.c</FilePath>
+            </File>
+            <File>
+              <FileName>math_matrix.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\utils\math\math_matrix.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>math_matrix.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_matrix.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_quaternion.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\utils\math\math_quaternion.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>math_quaternion.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_quaternion.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_sort.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\utils\math\math_sort.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>math_sort.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_sort.h</FilePath>
+            </File>
+            <File>
+              <FileName>math_utils.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Project\utils\math\math_utils.h</FilePath>
             </File>
           </Files>
         </Group>
