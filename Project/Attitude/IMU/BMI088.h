@@ -16,6 +16,22 @@
 #define BMI088_USE_SPI
 
 /**
+ * @brief BMI088 配置结构体
+ */
+typedef struct 
+{
+    SPI_HandleTypeDef *hspi; // SPI句柄
+    struct 
+    {
+        GPIO_TypeDef *port; // 片选信号端口
+        uint16_t pin;       // 片选信号引脚
+    } ce_acc, ce_gyro; // 片选信号结构体
+    uint8_t gyroRange;    // 陀螺仪量程设置
+    uint8_t accelRange;   // 加速度计量程设置
+} BMI088Config_t;
+
+
+/**
  * @brief BMI088 IMU传感器类
  * @details 实现IMU抽象接口，提供对BMI088传感器的访问
  */
@@ -24,19 +40,9 @@ class BMI088 : public IMU
 public:
     /**
      * @brief 构造函数
-     * @param spi SPI句柄指针
-     * @param acc_cs_port 加速度计片选GPIO端口
-     * @param acc_cs_pin 加速度计片选引脚
-     * @param gyro_cs_port 陀螺仪片选GPIO端口
-     * @param gyro_cs_pin 陀螺仪片选引脚
-     * @param gyroRange 陀螺仪量程设置，默认为2000dps
-     * @param accelRange 加速度计量程设置，默认为3G
+     * @param config BMI088配置结构体引用
      */
-    BMI088(SPI_HandleTypeDef *spi, 
-          GPIO_TypeDef *acc_cs_port, uint16_t acc_cs_pin, 
-          GPIO_TypeDef *gyro_cs_port, uint16_t gyro_cs_pin,
-          uint8_t gyroRange = BMI088_GYRO_2000, 
-          uint8_t accelRange = BMI088_ACC_RANGE_3G);
+    BMI088(const BMI088Config_t& config);
 
     /**
      * @brief 析构函数
@@ -58,22 +64,12 @@ public:
 
     /**
      * @brief 校准陀螺仪零偏
-     * @param sampleCount 采样次数，默认为1000
+     * @param sampleCount 采样次数，默认为500
      */
-    void calibrateGyro(uint32_t sampleCount = 1000);
+    void calibrateGyro(uint32_t sampleCount = 500);
 
 private:
-    SPI_HandleTypeDef *hspi; // SPI句柄
-    struct 
-    {
-        GPIO_TypeDef *port; // 片选信号端口
-        uint16_t pin;       // 片选信号引脚
-    } ce_acc, ce_gyro; // 片选信号结构体
-    
-
-    // 陀螺仪和加速度计量程设置
-    uint8_t _gyroRange;
-    uint8_t _accelRange;
+    BMI088Config_t _config; // BMI088 配置
 
     // 传感器灵敏度
     float _gyroSensitivity;

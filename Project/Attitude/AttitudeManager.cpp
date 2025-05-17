@@ -34,8 +34,6 @@ bool AttitudeManager::init()
         return false;
     }
     
-    _estimator->init();
-    
     _isInitialized = true;
     return true;
 }
@@ -63,6 +61,20 @@ void AttitudeManager::update()
 void AttitudeManager::getAttitude(float& roll, float& pitch, float& yaw)
 {
     _estimator->getEulerRadians(roll, pitch, yaw);
+}
+
+void AttitudeManager::getGyro(float gyro[3])
+{
+    for (int i = 0; i < 3; i++) {
+        gyro[i] = _gyro[i];
+    }
+}
+
+void AttitudeManager::getAccel(float accel[3])
+{
+    for (int i = 0; i < 3; i++) {
+        accel[i] = _accel[i];
+    }
 }
 
 /**

@@ -59,7 +59,8 @@ void math_matrix_print(const math_matrix_t *matrix, const char *name);
 #endif // __cplusplus
 #ifdef __cplusplus
 
-namespace MathUtils {
+namespace utils {
+namespace math {
 // C++类封装
 class Matrix {
 private:
@@ -117,7 +118,8 @@ public:
     static Matrix identity(uint32_t size);
 };
 
-} // namespace MathUtils
+} // namespace math
+} // namespace utils
 
 #endif /* __cplusplus */
 

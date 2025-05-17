@@ -2,15 +2,16 @@
 #include <string.h>
 #include "math_utils.h"
 #include <cmsis_os.h>
+#include "utils.h"
 
 // 内存管理优化 - 使用math_utils统一内存分配接口
 void* math_sort_get_buffer(uint32_t size_bytes) {
-    return __math_utils_malloc(size_bytes);
+    return __utils_malloc(size_bytes);
 }
 
 void math_sort_release_buffer(void* buffer) {
     if (buffer != NULL) {
-        __math_utils_free(buffer);
+        __utils_free(buffer);
     }
 }
 
@@ -468,7 +469,8 @@ int32_t math_sort_binary_search_right(const float *arr, uint32_t size, float val
 }
 
 #ifdef __cplusplus
-namespace MathUtils {
+namespace utils {
+namespace math {
 
 // 下面是C++模板方法实现
 template<typename T>
@@ -607,7 +609,7 @@ void Sorter::mergeSort(T* arr, uint32_t size) {
     }
     
     // 分配临时数组
-    T* temp = (T*)__math_utils_malloc(size * sizeof(T));
+    T* temp = (T*)__utils_malloc(size * sizeof(T));
     if (!temp) return; // 内存分配失败
     
     // 归并排序的内部实现
@@ -653,7 +655,7 @@ void Sorter::mergeSort(T* arr, uint32_t size) {
     
     MergeSortImpl::sort(arr, 0, size - 1, temp);
     
-    __math_utils_free(temp);
+    __utils_free(temp);
 }
 
 template<typename T>
@@ -684,7 +686,7 @@ T Sorter::median(T* arr, uint32_t size) {
     if (size == 1) return arr[0];
     
     // 创建临时数组拷贝
-    T* temp = (T*)__math_utils_malloc(size * sizeof(T));
+    T* temp = (T*)__utils_malloc(size * sizeof(T));
     if (!temp) return arr[0]; // 内存分配失败，返回第一个元素
     
     memcpy(temp, arr, size * sizeof(T));
@@ -703,7 +705,7 @@ T Sorter::median(T* arr, uint32_t size) {
         result = kthElement(temp, size, mid_idx);
     }
     
-    __math_utils_free(temp);
+    __utils_free(temp);
     return result;
 }
 
@@ -748,13 +750,13 @@ T Sorter::kthElement(T* arr, uint32_t size, uint32_t k) {
     };
     
     // 创建副本以避免修改原始数组
-    T* copy = (T*)__math_utils_malloc(size * sizeof(T));
+    T* copy = (T*)__utils_malloc(size * sizeof(T));
     if (!copy) return arr[0]; // 内存分配失败
     
     memcpy(copy, arr, size * sizeof(T));
     T result = QuickSelectImpl::select(copy, 0, size - 1, k);
     
-    __math_utils_free(copy);
+    __utils_free(copy);
     return result;
 }
 
@@ -787,5 +789,6 @@ template int Sorter::kthElement<int>(int*, uint32_t, uint32_t);
 template float Sorter::kthElement<float>(float*, uint32_t, uint32_t);
 template double Sorter::kthElement<double>(double*, uint32_t, uint32_t);
 
-} // namespace MathUtils
+} // namespace math
+} // namespace utils
 #endif

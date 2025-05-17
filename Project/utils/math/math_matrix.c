@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "math_utils.h"
+#include "utils.h"
 
 // 矩阵创建和内存管理
 
@@ -10,17 +11,17 @@ math_matrix_t* math_matrix_create(uint32_t rows, uint32_t cols) {
         return NULL;
     }
     
-    math_matrix_t *matrix = (math_matrix_t*)__math_utils_malloc(sizeof(math_matrix_t));
+    math_matrix_t *matrix = (math_matrix_t*)__utils_malloc(sizeof(math_matrix_t));
     if (!matrix) {
         return NULL;
     }
     
     matrix->rows = rows;
     matrix->cols = cols;
-    matrix->data = (float*)__math_utils_malloc(rows * cols * sizeof(float));
+    matrix->data = (float*)__utils_malloc(rows * cols * sizeof(float));
     
     if (!matrix->data) {
-        __math_utils_free(matrix);
+        __utils_free(matrix);
         return NULL;
     }
     
@@ -33,7 +34,7 @@ math_matrix_t* math_matrix_create_from_array(float *data, uint32_t rows, uint32_
         return NULL;
     }
     
-    math_matrix_t *matrix = (math_matrix_t*)__math_utils_malloc(sizeof(math_matrix_t));
+    math_matrix_t *matrix = (math_matrix_t*)__utils_malloc(sizeof(math_matrix_t));
     if (!matrix) {
         return NULL;
     }
@@ -80,10 +81,10 @@ void math_matrix_destroy(math_matrix_t *matrix) {
     }
     
     if (matrix->is_allocated && matrix->data) {
-        __math_utils_free(matrix->data);
+        __utils_free(matrix->data);
     }
     
-    __math_utils_free(matrix);
+    __utils_free(matrix);
 }
 
 // 矩阵索引和访问
@@ -208,7 +209,7 @@ void math_matrix_multiply(const math_matrix_t *a, const math_matrix_t *b, math_m
     // 检查自引用情况，避免破坏输入数据
     float* temp = NULL;
     if (result == a || result == b) {
-        temp = (float*)__math_utils_malloc(result->rows * result->cols * sizeof(float));
+        temp = (float*)__utils_malloc(result->rows * result->cols * sizeof(float));
         if (!temp) return;
     }
 
@@ -237,7 +238,7 @@ void math_matrix_multiply(const math_matrix_t *a, const math_matrix_t *b, math_m
     // 如果使用了临时缓冲区，将结果复制回目标矩阵
     if (temp) {
         memcpy(result->data, temp, result->rows * result->cols * sizeof(float));
-        __math_utils_free(temp);
+        __utils_free(temp);
     }
 }
 

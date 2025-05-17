@@ -5,25 +5,15 @@
 
 #include "BMI088.h"
 #include "main.h"
+#include "time_utils.h"
 
 /**
  * @brief 构造函数
  */
-BMI088::BMI088(SPI_HandleTypeDef *spi, 
-              GPIO_TypeDef *acc_cs_port, uint16_t acc_cs_pin, 
-              GPIO_TypeDef *gyro_cs_port, uint16_t gyro_cs_pin,
-              uint8_t gyroRange, uint8_t accelRange)
-    : _gyroRange(gyroRange),
-      _accelRange(accelRange),
+BMI088::BMI088(const BMI088Config_t& config)
+    : _config(config), // 使用初始化列表拷贝配置
       _isCalibrated(false)
 {
-    // 保存SPI句柄和片选信号配置
-    hspi = spi;
-    ce_acc.port = acc_cs_port;
-    ce_acc.pin = acc_cs_pin;
-    ce_gyro.port = gyro_cs_port;
-    ce_gyro.pin = gyro_cs_pin;
-    
     // 初始化零偏值为0
     _gyroOffset[0] = 0.0f;
     _gyroOffset[1] = 0.0f;
@@ -43,7 +33,7 @@ BMI088::BMI088(SPI_HandleTypeDef *spi,
     _accelConfig[2][2] = BMI088_ACC_CONF_ERROR;
 
     _accelConfig[3][0] = BMI088_ACC_RANGE;
-    _accelConfig[3][1] = _accelRange;
+    _accelConfig[3][1] = _config.accelRange; // 使用 _config 访问
     _accelConfig[3][2] = BMI088_ACC_RANGE_ERROR;
 
     _accelConfig[4][0] = BMI088_INT1_IO_CTRL;
@@ -56,7 +46,7 @@ BMI088::BMI088(SPI_HandleTypeDef *spi,
 
     // 设置陀螺仪配置参数
     _gyroConfig[0][0] = BMI088_GYRO_RANGE;
-    _gyroConfig[0][1] = _gyroRange;
+    _gyroConfig[0][1] = _config.gyroRange; // 使用 _config 访问
     _gyroConfig[0][2] = BMI088_GYRO_RANGE_ERROR;
 
     _gyroConfig[1][0] = BMI088_GYRO_BANDWIDTH;
@@ -89,7 +79,7 @@ BMI088::BMI088(SPI_HandleTypeDef *spi,
 void BMI088::setSensitivity()
 {
     // 根据量程设置加速度计灵敏度
-    switch (_accelRange)
+    switch (_config.accelRange) // 使用 _config 访问
     {
     case BMI088_ACC_RANGE_3G:
         _accelSensitivity = BMI088_ACCEL_3G_SEN;
@@ -109,7 +99,7 @@ void BMI088::setSensitivity()
     }
 
     // 根据量程设置陀螺仪灵敏度
-    switch (_gyroRange)
+    switch (_config.gyroRange) // 使用 _config 访问
     {
     case BMI088_GYRO_2000:
         _gyroSensitivity = BMI088_GYRO_2000_SEN;
@@ -145,7 +135,13 @@ bool BMI088::init()
     bool accelInitResult = initAccel();
     bool gyroInitResult = initGyro();
 
-    return accelInitResult && gyroInitResult;
+    if(accelInitResult && gyroInitResult)
+    {
+        calibrateGyro();
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -265,25 +261,33 @@ void BMI088::read(float gyro[3], float accel[3])
     rawData = (int16_t)((buf[5] << 8) | buf[4]);
     accel[2] = rawData * _accelSensitivity;
 
+    float gyroData[3] = {0};
+
     // 读取陀螺仪数据
     gyroReadMultiRegs(BMI088_GYRO_X_L, buf, 6);
 
     // 转换陀螺仪数据
     rawData = (int16_t)((buf[1] << 8) | buf[0]);
-    gyro[0] = rawData * _gyroSensitivity;
+    gyroData[0] = rawData * _gyroSensitivity;
 
     rawData = (int16_t)((buf[3] << 8) | buf[2]);
-    gyro[1] = rawData * _gyroSensitivity;
+    gyroData[1] = rawData * _gyroSensitivity;
 
     rawData = (int16_t)((buf[5] << 8) | buf[4]);
-    gyro[2] = rawData * _gyroSensitivity;
+    gyroData[2] = rawData * _gyroSensitivity;
 
     // 应用陀螺仪零偏校准值（如果已校准）
     if (_isCalibrated)
     {
-        gyro[0] -= _gyroOffset[0];
-        gyro[1] -= _gyroOffset[1];
-        gyro[2] -= _gyroOffset[2];
+        gyro[0] = gyroData[0] - _gyroOffset[0];
+        gyro[1] = gyroData[1] - _gyroOffset[1];
+        gyro[2] = gyroData[2] - _gyroOffset[2];
+    }
+    else
+    {
+        gyro[0] = gyroData[0];
+        gyro[1] = gyroData[1];
+        gyro[2] = gyroData[2];
     }
 }
 
@@ -300,6 +304,12 @@ void BMI088::calibrateGyro(uint32_t sampleCount)
     _gyroOffset[1] = 0.0f;
     _gyroOffset[2] = 0.0f;
 
+    for(uint32_t i = 0; i < sampleCount / 2; i++)
+    {
+        read(gyroBuf, accelBuf); // 忽略前几次数据
+        delay_ms(2); // 每次采样间隔2ms
+    }
+
     // 采集多次样本并求平均值
     for (uint32_t i = 0; i < sampleCount; i++)
     {
@@ -309,7 +319,7 @@ void BMI088::calibrateGyro(uint32_t sampleCount)
         _gyroOffset[1] += gyroBuf[1];
         _gyroOffset[2] += gyroBuf[2];
 
-        delay_ms(1); // 每次采样间隔1ms
+        delay_ms(2); // 每次采样间隔2ms
     }
 
     // 计算平均值作为零偏
@@ -325,7 +335,7 @@ void BMI088::calibrateGyro(uint32_t sampleCount)
  */
 void BMI088::delay_ms(uint16_t ms)
 {
-    HAL_Delay(ms);
+    utils::time::Delay::milliseconds(ms); // 使用时间工具类进行延时
 }
 
 /**
@@ -333,36 +343,7 @@ void BMI088::delay_ms(uint16_t ms)
  */
 void BMI088::delay_us(uint16_t us)
 {
-    uint32_t ticks = 0;
-    uint32_t told = 0;
-    uint32_t tnow = 0;
-    uint32_t tcnt = 0;
-    uint32_t reload = 0;
-
-    reload = SysTick->LOAD;
-    ticks = us * (SystemCoreClock / 1000000);
-    told = SysTick->VAL;
-
-    while (1)
-    {
-        tnow = SysTick->VAL;
-        if (tnow != told)
-        {
-            if (tnow < told)
-            {
-                tcnt += told - tnow;
-            }
-            else
-            {
-                tcnt += reload - tnow + told;
-            }
-            told = tnow;
-            if (tcnt >= ticks)
-            {
-                break;
-            }
-        }
-    }
+    utils::time::Delay::microseconds(us); // 使用时间工具类进行延时
 }
 
 #ifdef BMI088_USE_SPI
@@ -373,11 +354,11 @@ void BMI088::accelChipSelect(bool select)
 {
     if (select)
     {
-        HAL_GPIO_WritePin(ce_acc.port, ce_acc.pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(_config.ce_acc.port, _config.ce_acc.pin, GPIO_PIN_RESET); // 使用 _config 访问
     }
     else
     {
-        HAL_GPIO_WritePin(ce_acc.port, ce_acc.pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(_config.ce_acc.port, _config.ce_acc.pin, GPIO_PIN_SET); // 使用 _config 访问
     }
 }
 
@@ -388,11 +369,11 @@ void BMI088::gyroChipSelect(bool select)
 {
     if (select)
     {
-        HAL_GPIO_WritePin(ce_gyro.port, ce_gyro.pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(_config.ce_gyro.port, _config.ce_gyro.pin, GPIO_PIN_RESET); // 使用 _config 访问
     }
     else
     {
-        HAL_GPIO_WritePin(ce_gyro.port, ce_gyro.pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(_config.ce_gyro.port, _config.ce_gyro.pin, GPIO_PIN_SET); // 使用 _config 访问
     }
 }
 
@@ -402,7 +383,7 @@ void BMI088::gyroChipSelect(bool select)
 uint8_t BMI088::spiTransfer(uint8_t data)
 {
     uint8_t rxData;
-    HAL_SPI_TransmitReceive(hspi, &data, &rxData, 1, 10);
+    HAL_SPI_TransmitReceive(_config.hspi, &data, &rxData, 1, 1000); // 使用 _config 访问
     return rxData;
 }
 

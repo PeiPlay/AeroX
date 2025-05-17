@@ -5,7 +5,8 @@
 #include "math_const.h"
 #ifdef __cplusplus
 
-namespace MathUtils {
+namespace utils {
+namespace math {
 
 class Quaternion {
 public:
@@ -72,8 +73,8 @@ public:
     void rotateVector(const float v_in[3], float v_out[3]) const;
 };
 
-} // namespace MathUtils
+} // namespace math
+} // namespace utils
 
-#endif // __cplusplus
-
-#endif // MATH_QUATERNION_H
+#endif
+#endif

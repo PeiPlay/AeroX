@@ -35,11 +35,6 @@ public:
 class AttitudeEstimator {
 public:
     /**
-     * @brief 初始化姿态估计器
-     */
-    virtual void init() = 0;
-    
-    /**
      * @brief 更新姿态估计
      * @param gyro 陀螺仪数据（角速度），单位：rad/s
      * @param accel 加速度计数据，单位：m/s^2
@@ -117,6 +112,18 @@ public:
      * @param yaw 偏航角（rad）
      */
     void getAttitude(float& roll, float& pitch, float& yaw);
+
+    /**
+     * @brief 获取当前陀螺仪数据
+     * @param gyro 陀螺仪数据数组，单位：rad/s
+     */
+    void getGyro(float gyro[3]);
+
+    /**
+     * @brief 获取当前加速度计数据
+     * @param accel 加速度计数据数组，单位：m/s^2
+     */
+    void getAccel(float accel[3]);
     
     /**
      * @brief 获取当前四元数姿态

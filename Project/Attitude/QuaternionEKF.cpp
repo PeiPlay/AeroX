@@ -90,7 +90,7 @@ void QuaternionEKF::getQuaternion(float q[4])
 void QuaternionEKF::reset()
 {
     // 重置四元数为单位四元数
-    _quat = MathUtils::Quaternion(1.0f, 0.0f, 0.0f, 0.0f);
+    _quat = utils::math::Quaternion(1.0f, 0.0f, 0.0f, 0.0f);
 
     // 重置陀螺仪零偏
     _gyro_bias[0] = 0.0f;
@@ -173,7 +173,7 @@ void QuaternionEKF::stateTransition(const float gyro[3])
                              angle_delta[2] * angle_delta[2]);
 
     // 创建表示姿态增量的四元数
-    MathUtils::Quaternion q_delta;
+    utils::math::Quaternion q_delta;
 
 
     if (angle_norm > 1e-6f)
@@ -264,7 +264,7 @@ void QuaternionEKF::measurementUpdate(const float accel[3])
     _K.multiply(_residual, _state_correction); // state_correction = K * residual
 
     // 应用四元数校正
-    MathUtils::Quaternion q_correction(
+    utils::math::Quaternion q_correction(
         1.0f,
         _state_correction(0, 0),
         _state_correction(1, 0),
@@ -297,7 +297,7 @@ void QuaternionEKF::measurementUpdate(const float accel[3])
  * @brief 计算状态转移矩阵
  * @details 计算状态转移的雅可比矩阵F
  */
-void QuaternionEKF::calculateF(const float gyro[3], MathUtils::Matrix &F)
+void QuaternionEKF::calculateF(const float gyro[3], utils::math::Matrix &F)
 {
     F.setIdentity();
 
@@ -344,7 +344,7 @@ void QuaternionEKF::calculateF(const float gyro[3], MathUtils::Matrix &F)
  * @brief 计算测量雅可比矩阵
  * @details 计算测量方程的雅可比矩阵H
  */
-void QuaternionEKF::calculateH(MathUtils::Matrix &H)
+void QuaternionEKF::calculateH(utils::math::Matrix &H)
 {
     // 初始化H为零矩阵
     for (uint32_t i = 0; i < H.rows(); i++)
@@ -391,6 +391,6 @@ void QuaternionEKF::predictAccel(float accel_pred[3])
     float gravity_world[3] = {0.0f, 0.0f, -1.0f};
 
     // 使用共轭四元数将世界坐标系中的重力旋转到机体坐标系
-    MathUtils::Quaternion q_conj = _quat.conjugate();
+    utils::math::Quaternion q_conj = _quat.conjugate();
     q_conj.rotateVector(gravity_world, accel_pred);
 }

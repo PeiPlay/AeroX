@@ -1,0 +1,589 @@
+
+// 如果 M_PI 未定义
+#ifndef M_PI
+#define M_PI 3.14159265358979323846f
+#endif
+
+// 外部声明 SPI 句柄 (假设在 main.c 中定义)
+extern SPI_HandleTypeDef hspi2;
+
+// 全局变量存储欧拉角 (单位: 度)
+float g_roll_deg = 0.0f;
+float g_pitch_deg = 0.0f;
+float g_yaw_deg = 0.0f;
+
+// BMI088 配置
+BMI088Config_t bmi088_config = {
+    .hspi = &hspi2,
+    .ce_acc = {.port = GPIOC, .pin = GPIO_PIN_0},
+    .ce_gyro = {.port = GPIOC, .pin = GPIO_PIN_3},
+    .gyroRange = BMI088_GYRO_2000,
+    .accelRange = BMI088_ACC_RANGE_3G
+};
+
+// 实例化 IMU 和姿态估计器
+BMI088 bmi088_sensor(bmi088_config);
+MahonyAHRS mahony_estimator(500.0f, 0.55f, 0.002f); // 使用默认参数
+// 实例化姿态管理器
+AttitudeManager attitude_manager(&bmi088_sensor, &mahony_estimator);
+
+
+void test_imu_task(void) {
+    float gyroBuf[3] = {0};
+    float accelBuf[3] = {0};
+
+    bmi088_sensor.init(); // 初始化传感器 (如果需要)
+    osDelay(2);
+    bmi088_sensor.read(gyroBuf, accelBuf); // 读取传感器数据 (如果需要)
+    mahony_estimator.init(accelBuf); // 初始化姿态估计器 (如果需要)
+    osDelay(2);
+
+    // 初始化姿态管理器 (包含 IMU 初始化和校准)
+    if (!attitude_manager.init()) {
+        // 初始化失败处理 (例如，进入错误状态或死循环)
+        // test_printf("Attitude Manager Init Failed!\n"); // 避免在循环中使用打印
+        while(1) {
+            osDelay(1000);
+        }
+    }
+
+    // 设置姿态估计器的采样周期 (假设系统运行在 500Hz)
+    // 注意：MahonyAHRS 默认构造函数已设置 500Hz，这里可以省略
+    // mahony_estimator.setSamplePeriod(1.0f / 500.0f);
+
+    // 无限循环更新姿态
+    for (;;) {
+        // 更新姿态管理器 (读取 IMU 数据并进行姿态解算)
+        attitude_manager.update();
+
+        // 获取欧拉角 (弧度)
+        float roll_rad, pitch_rad, yaw_rad;
+        attitude_manager.getAttitude(roll_rad, pitch_rad, yaw_rad);
+
+        // 将弧度转换为度数并存储到全局变量
+        g_roll_deg = roll_rad * (180.0f / M_PI);
+        g_pitch_deg = pitch_rad * (180.0f / M_PI);
+        g_yaw_deg = yaw_rad * (180.0f / M_PI);
+
+        // 限制执行频率 (例如，目标 500Hz，osDelay(2) 对应 2ms 延迟)
+        // 实际频率取决于 osDelay 的精度和 update() 的执行时间
+        osDelay(2);
+    }
+}
+
+
+
+extern "C" {
+    void test_cpp_task(void) {
+
+        // 测试函数的实现
+        test_imu_task(); // 调用测试函数
+    
+    }
+    void test_cpp_debug(void) {
+
+        // 测试调试函数的实现
+        // 这里可以添加调试代码，例如打印变量值等
+        test_printf("Debugging...\n");
+
+        //持续打印欧拉角
+        while (1) {
+            vofa_print(g_roll_deg, g_pitch_deg, g_yaw_deg);
+        }
+    
+    }
+} // extern "C"
+
+
+
+// 声明外部的UART7句柄
+extern UART_HandleTypeDef huart7;
+
+// 全局变量，用于记录数据包统计信息
+static volatile uint32_t g_total_packets = 0;          // 总包计数
+static volatile uint32_t g_current_packet_size = 0;    // 当前包长度
+static volatile uint32_t g_last_packet_time = 0;       // 上次收到包的时间
+static volatile float g_packet_frequency = 0.0f;       // 发包频率 (包/秒)
+static volatile uint8_t g_init_status = 0;             // 初始化状态: 0=未初始化, 1=初始化成功, 2=初始化失败
+
+// 创建SerialStream实例 - 使用模板类，缓冲区大小128字节
+SerialStream<128> uart7_stream(&huart7);
+
+
+extern "C" {
+	extern uint32_t counter; // 用于存储DMA接收的字节数
+    extern uint8_t buffer[256]; // 用于存储接收数据的缓冲区
+
+    // 阻塞回调函数，当用户消耗太慢时调用
+void buffer_overflow_handler(void* context) {
+    // 不打印信息，仅记录状态
+    // 这里可以增加一个全局计数器来记录溢出次数，便于调试函数读取
+    counter++;
+}
+    void test_cpp_task(void) {
+
+        // 初始化SerialStream - 不打印任何信息
+        
+        //先调用init在RTOS启动后分配资源
+        if (!uart7_stream.init()) {
+            g_init_status = 2; // 初始化失败
+            return;
+        }
+        
+        // 注册回调
+        uart7_stream.registerBlockingCallback(buffer_overflow_handler);
+        
+        // 开始接收
+        if (!uart7_stream.begin()) {
+            g_init_status = 2; // 初始化失败
+            return;
+        }
+
+        
+        g_init_status = 1; // 初始化成功
+        
+        uint8_t data_buffer[256]; // 临时存储一包数据
+        uint32_t current_time, time_diff;
+		
+				
+        
+        // 主循环
+        for (;;) {
+            size_t bytes_read = 0;
+            
+            // 非阻塞形式读取数据，直到缓冲区消耗完
+            while (uart7_stream.available() && bytes_read < sizeof(data_buffer)) {
+                data_buffer[bytes_read++] = uart7_stream.read();
+            }
+            
+            // 如果读取到数据，更新统计信息
+            if (bytes_read > 0) {
+                // 更新当前包长度
+                g_current_packet_size = bytes_read;
+                
+                // 增加总包计数
+                g_total_packets++;
+                
+                // 计算发包频率
+                current_time = HAL_GetTick();
+                if (g_last_packet_time > 0) {
+                    time_diff = current_time - g_last_packet_time;
+                    if (time_diff > 0) {
+                        g_packet_frequency = 1000.0f / time_diff; // 转换为Hz (包/秒)
+                    }
+                }
+                g_last_packet_time = current_time;
+                
+                // 可以在这里添加额外的数据处理代码
+                // ...
+            }
+            
+            // 当前包处理完毕，阻塞等待下一包数据
+            // read()方法会阻塞直到有新数据可用
+            data_buffer[0] = uart7_stream.read(); // 获取下一包的第一个字节
+            
+            // 已经读取了下一包的第一个字节，将其存储
+            bytes_read = 1;
+        }
+    }
+    
+    void test_cpp_debug(void) {
+        // 每0.5秒打印一次统计信息和状态
+        for(;;) {
+            // 打印初始化状态
+            switch (g_init_status) {
+                case 0:
+                    test_printf("[UART7] Status: Initializing...\r\n");
+                    break;
+                case 1:
+                    test_printf("[UART7] Status: Initialized successfully\r\n");
+                    break;
+                case 2:
+                    test_printf("[UART7] Status: Initialization FAILED\r\n");
+                    break;
+            }
+            
+            // 仅当初始化成功后才打印数据统计
+            if (g_init_status == 1) {
+                test_printf("[UART7 Stats] Packet size: %lu bytes, Frequency: %.2f Hz, Total packets: %lu\r\n",
+                            (unsigned long)g_current_packet_size,
+                            (float)g_packet_frequency,
+                            (unsigned long)g_total_packets);
+            }
+            
+            osDelay(500); // 延时0.5秒
+        }
+    }
+
+    void HAL_UARTEx_RxEventCallback_USER(UART_HandleTypeDef *huart, uint16_t size) {
+        // 处理UART接收事件
+        if (huart->Instance == UART7) {
+            uart7_stream.idleCallback(huart); // 调用SerialStream的IDLE回调
+        }
+    }
+	
+	void USR_RECALL(void)
+	{
+        // 不需要做任何事，begin()已经启动DMA接收
+	}
+
+    
+} // extern "C"
+
+
+// 声明外部的UART7句柄
+extern UART_HandleTypeDef huart7;
+
+// 全局变量，使用静态对象而非动态分配
+static UPT201 g_upt201(&huart7, 2048, osPriorityBelowNormal);  // 2KB栈，低于正常优先级
+static volatile uint32_t g_total_packets = 0;  // 总接收包计数
+static volatile uint32_t g_last_receive_time = 0; // 上次收到数据的时间
+static volatile bool g_init_success = false;   // 初始化状态
+
+// 光流原始数据
+static volatile float g_flow_x = 0.0f;         // X方向光流（当前帧）
+static volatile float g_flow_y = 0.0f;         // Y方向光流（当前帧）
+static volatile uint16_t g_distance = 0;       // TOF距离(mm)
+static volatile uint8_t g_confidence = 0;      // 测距置信度
+
+// 累计位移计算
+static volatile float g_accum_x = 0.0f;        // X方向累计位移(mm)
+static volatile float g_accum_y = 0.0f;        // Y方向累计位移(mm)
+bool g_reset_accum_flag = false; // 累计位移清零标志
+
+extern "C" {
+
+    void test_cpp_task(void) {
+        // 初始化UPT201
+        if (!g_upt201.init()) {
+            test_printf("[UPT201] Error: Initialization failed\r\n");
+            return;
+        }
+        
+        // 启动UPT201
+        if (!g_upt201.start()) {
+            test_printf("[UPT201] Error: Failed to start\r\n");
+            return;
+        }
+        
+        g_init_success = true;
+        test_printf("[UPT201] Started successfully\r\n");
+        
+        // 主循环 - 等待新的光流数据并处理
+        for (;;) {
+            // 等待新的光流数据（最多等待100ms）
+            if (g_upt201.waitForData(1000)) {
+                // 获取最新的光流数据
+                OpticalFlowData flow_data = g_upt201.getData();
+                
+                // 更新全局变量，供debug函数使用
+                g_flow_x = flow_data.flow_x;
+                g_flow_y = flow_data.flow_y;
+                g_distance = flow_data.distance;
+                g_confidence = flow_data.confidence;
+                
+                if (flow_data.valid) {
+                    g_total_packets++;
+                    g_last_receive_time = osKernelGetTickCount();
+                    
+                    // 计算实际位移，使用当前测量的高度
+                    float dx = flow_data.getDisplacementX(flow_data.distance);
+                    float dy = flow_data.getDisplacementY(flow_data.distance);
+                    
+                    // 累计位移（需要线程安全）
+                    if (!g_reset_accum_flag) {
+                        g_accum_x += dx;
+                        g_accum_y += dy;
+                    } else {
+                        // 检测到清零标志，重置累计值
+                        g_accum_x = 0.0f;
+                        g_accum_y = 0.0f;
+                        g_reset_accum_flag = false; // 清除标志位
+                    }
+                }
+            }
+            
+            // 检查清零标志（即使没有新数据也需要检查）
+            if (g_reset_accum_flag) {
+                g_accum_x = 0.0f;
+                g_accum_y = 0.0f;
+                g_reset_accum_flag = false; // 清除标志位
+            }
+        }
+    }
+    
+    void test_cpp_debug(void) {
+        static uint8_t reset_cmd = 0;  // 清零命令（0=不清零，1=清零）
+        
+        // 每0.5秒打印一次UPT201状态和数据
+        for(;;) {
+            if (!g_init_success) {
+                test_printf("[UPT201] Status: Initialization failed\r\n");
+            }
+            else if (!g_upt201.isRunning()) {
+                test_printf("[UPT201] Status: Not running\r\n");
+            }
+            else {
+                // 计算自上次数据包的时间（ms）
+                uint32_t now = osKernelGetTickCount();
+                uint32_t time_since_last = now - g_last_receive_time;
+                
+                test_printf("[UPT201] Status: Running, Update rate: %.2f Hz\r\n", 
+                            g_upt201.getUpdateFrequency());
+                
+                test_printf("[UPT201] Raw: Flow X: %.4f, Flow Y: %.4f, Distance: %u mm, Confidence: %u%%\r\n",
+                            (float)g_flow_x,
+                            (float)g_flow_y,
+                            (unsigned int)g_distance,
+                            (unsigned int)g_confidence);
+                
+                test_printf("[UPT201] Accumulated: X: %.2f mm, Y: %.2f mm, Reset[%d]=1 to clear\r\n",
+                            (float)g_accum_x,
+                            (float)g_accum_y,
+                            reset_cmd);
+                
+                test_printf("[UPT201] Statistics: Packets: %lu\r\n", 
+                            (unsigned long)g_total_packets);
+                
+                // 检测是否长时间未收到数据
+                if (time_since_last > 1000) { // 超过1秒
+                    test_printf("[UPT201] Warning: No data for %lu ms\r\n", 
+                                (unsigned long)time_since_last);
+                }
+                
+                // 检查是否需要清零累计值
+                if (reset_cmd == 1) {
+                    g_reset_accum_flag = true;
+                    reset_cmd = 0;  // 自动重置命令
+                    test_printf("[UPT201] Accumulation reset requested\r\n");
+                }
+            }
+            
+            osDelay(100); // 延时0.5秒
+        }
+    }
+    
+    // 转发UART中断到UPT201模块
+    void HAL_UARTEx_RxEventCallback_USER(UART_HandleTypeDef *huart, uint16_t size) {
+       // 调用UPT201的空闲回调函数
+       if (huart->Instance == UART7) {
+           g_upt201.uartIdleCallback(huart);
+       }
+    }
+    
+} // extern "C"
+
+
+#include "test.h"
+#include "utils.h"
+#include "cmsis_os.h"
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include "main.h" 
+#include <functional>
+#include <new>      
+#include "pid.h"
+#include "Attitude.h" 
+#include "IMU/BMI088.h"
+#include "MahonyAHRS.h"
+#include <cmath>
+#include "vofa.h"
+#include "up_t201.h" 
+#include "spl06.h"   
+#include "tim.h"   
+#include "sdc_dual.h" 
+#include "watchdog.h" // Include watchdog header
+
+// Watchdog test related variables
+static WatchdogManager* watchdog_manager = nullptr;
+static Watchdog* regular_watchdog = nullptr;  // Regularly fed watchdog
+static Watchdog* timeout_watchdog = nullptr;  // Watchdog for timeout testing
+static bool watchdog_test_initialized = false;
+static uint32_t watchdog_timeout_count = 0;
+static bool trigger_timeout_test = false;
+
+// Watchdog callback functions - minimize output to avoid affecting test results
+void regular_watchdog_callback() {
+    // This callback should not be triggered, increment counter for later checking
+    static uint32_t reg_timeout_count = 0;
+    reg_timeout_count++;
+    // Avoid printing in callback to prevent delays
+}
+
+void timeout_watchdog_callback() {
+    // Timeout watchdog callback, just record timeout count
+    watchdog_timeout_count++;
+    
+    // Restart the timeout watchdog
+    if (timeout_watchdog && watchdog_manager) {
+        timeout_watchdog->start(*watchdog_manager);
+    }
+}
+
+// Initialize watchdog test
+bool init_watchdog_test() {
+    if (watchdog_test_initialized) {
+        return true;
+    }
+    
+    // Create watchdog manager
+    watchdog_manager = new (std::nothrow) WatchdogManager();
+    if (!watchdog_manager) {
+        return false;
+    }
+    
+    // Initialize manager
+    if (!watchdog_manager->init()) {
+        delete watchdog_manager;
+        watchdog_manager = nullptr;
+        return false;
+    }
+    
+    // Create regular watchdog (2000ms timeout)
+    regular_watchdog = new (std::nothrow) Watchdog(2000, regular_watchdog_callback);
+    if (!regular_watchdog) {
+        delete watchdog_manager;
+        watchdog_manager = nullptr;
+        return false;
+    }
+    
+    // Create timeout test watchdog (1000ms timeout)
+    timeout_watchdog = new (std::nothrow) Watchdog(1000, timeout_watchdog_callback);
+    if (!timeout_watchdog) {
+        delete regular_watchdog;
+        regular_watchdog = nullptr;
+        delete watchdog_manager;
+        watchdog_manager = nullptr;
+        return false;
+    }
+    
+    // Start watchdogs
+    if (!regular_watchdog->start(*watchdog_manager)) {
+        delete timeout_watchdog;
+        timeout_watchdog = nullptr;
+        delete regular_watchdog;
+        regular_watchdog = nullptr;
+        delete watchdog_manager;
+        watchdog_manager = nullptr;
+        return false;
+    }
+    
+    if (!timeout_watchdog->start(*watchdog_manager)) {
+        delete timeout_watchdog;
+        timeout_watchdog = nullptr;
+        delete regular_watchdog;
+        regular_watchdog = nullptr;
+        delete watchdog_manager;
+        watchdog_manager = nullptr;
+        return false;
+    }
+    
+    watchdog_test_initialized = true;
+    return true;
+}
+
+extern "C" {
+
+    void test_cpp_task(void) {
+        // Initialize watchdog test
+        if (!init_watchdog_test()) {
+            test_printf("[WDT] Failed to initialize watchdog test\r\n");
+            osDelay(1000);
+            return;
+        }
+        
+        test_printf("[WDT] Watchdog test initialized successfully\r\n");
+        test_printf("[WDT] Starting main test loop...\r\n");
+        
+        // Main test loop
+        uint32_t feed_counter = 0;
+        
+        // Create a continuous loop since function is only called once
+        while (1) {
+            feed_counter++;
+                
+            // Always feed the regular watchdog
+            if (regular_watchdog && regular_watchdog->isActive()) {
+                regular_watchdog->feed();
+            }
+            
+            // Only feed timeout watchdog when not in timeout test
+            if (!trigger_timeout_test && timeout_watchdog && timeout_watchdog->isActive()) {
+                timeout_watchdog->feed();
+            }
+            
+            // Print status every 10 cycles with minimal information
+            if (feed_counter % 10 == 0) {
+                test_printf("[WDT] Cycle: %lu, Timeouts: %lu\r\n", 
+                        feed_counter, watchdog_timeout_count);
+            }
+            
+            // Trigger timeout test every 50 cycles
+            if (feed_counter % 50 == 0) {
+                trigger_timeout_test = true;
+                test_printf("[WDT] Triggering watchdog timeout test\r\n");
+            }
+            
+            // Resume normal feeding after 5 cycles of testing
+            if (trigger_timeout_test && feed_counter % 55 == 0) {
+                trigger_timeout_test = false;
+                test_printf("[WDT] Resuming normal watchdog feeding\r\n");
+            }
+            
+            // Delay between iterations
+            osDelay(100); // 100ms per cycle
+        }
+    }
+    
+    void test_cpp_debug(void) {
+        static uint32_t last_timeout_count = 0;
+        static uint32_t debug_counter = 0;
+        
+        // Create a continuous loop since function is only called once
+        while (1) {
+            debug_counter++;
+            
+            // Check initialization status
+            if (!watchdog_test_initialized) {
+                test_printf("[WDT] Watchdog test not initialized\r\n");
+                // Avoid attempting initialization here, let test_cpp_task handle it
+            } else {
+                // Print detailed status every second
+                test_printf("[WDT] === Watchdog Test Status #%lu ===\r\n", debug_counter);
+                test_printf("[WDT] Manager initialized: %s\r\n", 
+                       (watchdog_manager && watchdog_manager->isInitialized()) ? "Yes" : "No");
+                test_printf("[WDT] Regular watchdog: %s\r\n", 
+                       (regular_watchdog && regular_watchdog->isActive()) ? "Active" : "Inactive");
+                test_printf("[WDT] Timeout watchdog: %s\r\n", 
+                       (timeout_watchdog && timeout_watchdog->isActive()) ? "Active" : "Inactive");
+                test_printf("[WDT] Timeout count: %lu\r\n", watchdog_timeout_count);
+                test_printf("[WDT] Timeout test active: %s\r\n", trigger_timeout_test ? "Yes" : "No");
+                
+                // Detect timeout count changes
+                if (watchdog_timeout_count > last_timeout_count) {
+                    test_printf("[WDT] New timeout events detected: %lu\r\n", 
+                            watchdog_timeout_count - last_timeout_count);
+                    last_timeout_count = watchdog_timeout_count;
+                }
+                
+                test_printf("[WDT] ======================\r\n");
+            }
+            
+            // Toggle timeout test state every 5 debug cycles
+            if (debug_counter % 5 == 0 && watchdog_test_initialized) {
+                bool old_state = trigger_timeout_test;
+                trigger_timeout_test = !trigger_timeout_test;
+                test_printf("[WDT] Timeout test state changed: %s -> %s\r\n", 
+                        old_state ? "Active" : "Inactive", 
+                        trigger_timeout_test ? "Active" : "Inactive");
+            }
+            
+            // Delay between debug outputs
+            osDelay(1000); // 1 second between status updates
+        }
+    }
+
+} // extern "C"
+
+

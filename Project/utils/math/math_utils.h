@@ -4,9 +4,6 @@
 #include <cmsis_os.h>
 #include "arm_math.h"
 
-// 内存分配宏定义
-#define __math_utils_malloc(size) pvPortMalloc(size)
-#define __math_utils_free(ptr) vPortFree(ptr)
 
 // 引入所有子模块
 #include "math_const.h"

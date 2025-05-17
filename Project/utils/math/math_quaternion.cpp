@@ -1,7 +1,8 @@
 #include "math_quaternion.h"
 #include <math.h> // Include for standard math functions if needed, though CMSIS is preferred
 
-namespace MathUtils {
+namespace utils {
+namespace math {
 
 // 构造函数
 Quaternion::Quaternion() : w(1.0f), x(0.0f), y(0.0f), z(0.0f) {}
@@ -377,4 +378,5 @@ void Quaternion::rotateVector(const float v_in[3], float v_out[3]) const {
     v_out[2] = R20 * v_in[0] + R21 * v_in[1] + R22 * v_in[2];
 }
 
-} // namespace MathUtils
+} // namespace math
+} // namespace utils

@@ -31,7 +31,7 @@ public:
     /**
      * @brief 初始化姿态估计器
      */
-    virtual void init() override;
+    virtual void init();
 
     /**
      * @brief 更新姿态估计
@@ -80,34 +80,34 @@ public:
 
 private:
     // 状态变量
-    MathUtils::Quaternion _quat; // 四元数姿态
+    utils::math::Quaternion _quat; // 四元数姿态
     float _gyro_bias[3];         // 陀螺仪零偏
 
     // 状态协方差矩阵 (7x7)
-    MathUtils::Matrix _P;
+    utils::math::Matrix _P;
 
     // 过程噪声协方差矩阵 (7x7)
-    MathUtils::Matrix _Q;
+    utils::math::Matrix _Q;
 
     // 测量噪声协方差矩阵 (3x3)
-    MathUtils::Matrix _R;
+    utils::math::Matrix _R;
 
     // 采样时间
     float _dt;
     
     // 预先分配的中间矩阵，避免频繁申请和释放内存
-    MathUtils::Matrix _F;            // 状态转移矩阵 (7x7)
-    MathUtils::Matrix _F_transpose;  // F的转置 (7x7)
-    MathUtils::Matrix _H;            // 测量雅可比矩阵 (3x7)
-    MathUtils::Matrix _H_transpose;  // H的转置 (7x3)
-    MathUtils::Matrix _S;            // 新息协方差矩阵 (3x3)
-    MathUtils::Matrix _S_inverse;    // S的逆矩阵 (3x3)
-    MathUtils::Matrix _K;            // 卡尔曼增益 (7x3)
-    MathUtils::Matrix _residual;     // 测量残差 (3x1)
-    MathUtils::Matrix _state_correction; // 状态校正 (7x1)
-    MathUtils::Matrix _I;            // 单位矩阵 (7x7)
-    MathUtils::Matrix _temp_7x7;     // 临时矩阵，用于存储计算中间结果 (7x7)
-    MathUtils::Matrix _temp_7x3;     // 临时矩阵，用于存储计算中间结果 (7x3)
+    utils::math::Matrix _F;            // 状态转移矩阵 (7x7)
+    utils::math::Matrix _F_transpose;  // F的转置 (7x7)
+    utils::math::Matrix _H;            // 测量雅可比矩阵 (3x7)
+    utils::math::Matrix _H_transpose;  // H的转置 (7x3)
+    utils::math::Matrix _S;            // 新息协方差矩阵 (3x3)
+    utils::math::Matrix _S_inverse;    // S的逆矩阵 (3x3)
+    utils::math::Matrix _K;            // 卡尔曼增益 (7x3)
+    utils::math::Matrix _residual;     // 测量残差 (3x1)
+    utils::math::Matrix _state_correction; // 状态校正 (7x1)
+    utils::math::Matrix _I;            // 单位矩阵 (7x7)
+    utils::math::Matrix _temp_7x7;     // 临时矩阵，用于存储计算中间结果 (7x7)
+    utils::math::Matrix _temp_7x3;     // 临时矩阵，用于存储计算中间结果 (7x3)
 
     // 状态转移函数
     void stateTransition(const float gyro[3]);
@@ -116,8 +116,8 @@ private:
     void measurementUpdate(const float accel[3]);
 
     // 状态矩阵和雅可比矩阵
-    void calculateF(const float gyro[3], MathUtils::Matrix &F);
-    void calculateH(MathUtils::Matrix &H);
+    void calculateF(const float gyro[3], utils::math::Matrix &F);
+    void calculateH(utils::math::Matrix &H);
 
     // 计算预测的重力方向
     void predictAccel(float accel_pred[3]);

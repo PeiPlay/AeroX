@@ -61,8 +61,8 @@ void math_normalize(float *vec, uint32_t length) {
     for (uint32_t i = 0; i < length; i++) {
         magnitude += vec[i] * vec[i];
     }
-    
-    magnitude = sqrtf(magnitude);
+
+    magnitude = math_sqrtf(magnitude);
     
     // 避免除以零
     if (magnitude < FLOAT_EPSILON) {

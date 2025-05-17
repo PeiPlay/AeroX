@@ -22,7 +22,7 @@ public:
      * @param Kp 比例增益
      * @param Ki 积分增益
      */
-    MahonyAHRS(float sampleFreq = 500.0f, float Kp = 2.0f, float Ki = 0.1f);
+    MahonyAHRS(float sampleFreq = 500.0f, float Kp = 0.6f, float Ki = 0.02f);
 
     /**
      * @brief 析构函数
@@ -31,8 +31,10 @@ public:
 
     /**
      * @brief 初始化姿态估计器
+     * @param accel 加速度计数据，用于初始化姿态
+     * @param mag 磁力计数据，用于初始化偏航角（可选）
      */
-    virtual void init() override;
+    virtual void init(float accel[3] = nullptr, float mag[3] = nullptr);
 
     /**
      * @brief 更新姿态估计
@@ -83,6 +85,9 @@ private:
     // 四元数表示的姿态
     float _q0, _q1, _q2, _q3;
 
+    // 预计算的欧拉角，在update时更新
+    float _roll, _pitch, _yaw;
+
     // 积分误差
     float _integralFBx, _integralFBy, _integralFBz;
 
@@ -100,8 +105,8 @@ private:
     void normalizeVectors(float ax, float ay, float az, float &nx, float &ny, float &nz,
                           float mx, float my, float mz, float &wx, float &wy, float &wz);
 
-    // 计算欧拉角
-    void computeEulerAngles(float &roll, float &pitch, float &yaw);
+    // 计算欧拉角（内部方法，仅在update中调用）
+    void computeEulerRadians();
 };
 
 #endif // MAHONY_AHRS_H

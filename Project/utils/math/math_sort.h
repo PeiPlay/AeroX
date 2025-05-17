@@ -37,7 +37,8 @@ void math_sort_release_buffer(void* buffer);
 #ifdef __cplusplus
 }
 
-namespace MathUtils {
+namespace utils {
+namespace math {
 
 // C++ 类封装
 class Sorter {
@@ -71,7 +72,8 @@ public:
     static T kthElement(T* arr, uint32_t size, uint32_t k);
 };
 
-} // namespace MathUtils
+} // namespace math
+} // namespace utils
 
 #endif /* __cplusplus */
 

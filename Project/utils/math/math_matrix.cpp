@@ -2,7 +2,8 @@
 #include <string.h>
 #include "math_utils.h"
 
-namespace MathUtils {
+namespace utils {
+namespace math {
 
 // Matrix类构造函数
 Matrix::Matrix(uint32_t rows, uint32_t cols) : m_owner(true) {
@@ -249,4 +250,5 @@ Matrix Matrix::identity(uint32_t size) {
     return Matrix(matrix, true);
 }
 
-} // namespace MathUtils
+} // namespace math
+} // namespace utils
