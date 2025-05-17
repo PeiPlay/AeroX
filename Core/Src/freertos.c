@@ -61,6 +61,13 @@ const osThreadAttr_t debugTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for AttitudeIMUTask */
+osThreadId_t AttitudeIMUTaskHandle;
+const osThreadAttr_t AttitudeIMUTask_attributes = {
+  .name = "AttitudeIMUTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -69,8 +76,8 @@ const osThreadAttr_t debugTask_attributes = {
 
 void StartDefaultTask(void *argument);
 void StartDebugTask(void *argument);
+void StartAttitudeIMUTask(void *argument);
 
-extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
@@ -106,6 +113,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of debugTask */
   debugTaskHandle = osThreadNew(StartDebugTask, NULL, &debugTask_attributes);
 
+  /* creation of AttitudeIMUTask */
+  AttitudeIMUTaskHandle = osThreadNew(StartAttitudeIMUTask, NULL, &AttitudeIMUTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -125,8 +135,6 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 __weak void StartDefaultTask(void *argument)
 {
-  /* init code for USB_DEVICE */
-  MX_USB_DEVICE_Init();
   /* USER CODE BEGIN StartDefaultTask */
   /* Infinite loop */
   for(;;)
@@ -152,6 +160,24 @@ __weak void StartDebugTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartDebugTask */
+}
+
+/* USER CODE BEGIN Header_StartAttitudeIMUTask */
+/**
+* @brief Function implementing the AttitudeIMUTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartAttitudeIMUTask */
+__weak void StartAttitudeIMUTask(void *argument)
+{
+  /* USER CODE BEGIN StartAttitudeIMUTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartAttitudeIMUTask */
 }
 
 /* Private application code --------------------------------------------------*/

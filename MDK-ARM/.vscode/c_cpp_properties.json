@@ -12,10 +12,6 @@
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Drivers\\CMSIS\\Device\\ST\\STM32H7xx\\Include",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Drivers\\CMSIS\\Include",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Drivers\\CMSIS\\DSP",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\USB_DEVICE\\App",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\USB_DEVICE\\Target",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\ST\\STM32_USB_Device_Library\\Core\\Inc",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\ST\\STM32_USB_Device_Library\\Class\\CDC\\Inc",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Project\\Attitude",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Project\\Attitude\\IMU",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Project\\Test",
@@ -38,9 +34,7 @@
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Core\\Src",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Drivers\\STM32H7xx_HAL_Driver\\Src",
                 "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\Third_Party\\FreeRTOS\\Source",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\ST\\STM32_USB_Device_Library\\Core\\Src",
-                "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\ST\\STM32_USB_Device_Library\\Class\\CDC\\Src"
+                "d:\\Coding\\Project\\AeroX\\AeroX\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
