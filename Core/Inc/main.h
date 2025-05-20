@@ -63,6 +63,7 @@ void Error_Handler(void);
 #define PE3_NRF_CS_GPIO_Port GPIOE
 #define PC13_NRF_IRQ_Pin GPIO_PIN_13
 #define PC13_NRF_IRQ_GPIO_Port GPIOC
+#define PC13_NRF_IRQ_EXTI_IRQn EXTI15_10_IRQn
 #define PC0_SPI2_CS0_Pin GPIO_PIN_0
 #define PC0_SPI2_CS0_GPIO_Port GPIOC
 #define PC3_SPI2_CS1_Pin GPIO_PIN_3

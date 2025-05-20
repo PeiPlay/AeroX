@@ -74,7 +74,7 @@ void Chassis::setThrottleMode(ThrottleMode mode) {
 
 // setBaseThrottle, setTargetAltitude, updateCurrentAltitude, setAltitudeControlActive 方法已移除
 
-void Chassis::update(float dt) {
+void Chassis::update() {
     if (!status_.isInitialized || !config_.attitudeMgr) {
         // 必要组件未初始化，则不执行更新
         return;

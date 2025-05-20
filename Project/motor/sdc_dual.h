@@ -13,7 +13,7 @@ public:
      * @param tim_channel 定时器通道 (例如 TIM_CHANNEL_1)
      * @param reversed 电机是否需要反向。默认为 false。
      */
-    SdcDualMotor(TIM_HandleTypeDef* htim, uint32_t tim_channel, bool reversed = false);
+    SdcDualMotor(TIM_HandleTypeDef* htim, uint32_t tim_channel, bool reversed = false, float throttle_limit = 0.98f);
 
     /**
      * @brief 初始化电机控制器
@@ -49,7 +49,7 @@ private:
     TIM_HandleTypeDef* htim_;
     uint32_t tim_channel_;
     uint32_t timer_arr_val_; // 存储 htim_->Instance->ARR 的值
-    float throttle_limit_factor_ = 0.5f; // 油门限制因子，范围 [0.0, 1.0]
+    float throttle_limit_factor_; // 油门限制因子，范围 [0.0, 1.0]
     uint32_t current_compare_value_; // 当前设置的PWM比较值
 };
 

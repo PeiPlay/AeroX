@@ -12,14 +12,11 @@
 extern "C" {
 #endif
 
-void test_printf(const char *format, ...);
-void test_usb_cdc_sendmsg(const char *msg, uint32_t len); // 确保在 extern "C" 内声明
+// void test_printf(const char *format, ...);
+// void test_usb_cdc_sendmsg(const char *msg, uint32_t len); // 确保在 extern "C" 内声明
 void test_cpp_task(void);
 void test_cpp_debug(void);
-// Re-enable external scheduler callback declaration for test.c
-void scheduler_timer_callback(TIM_HandleTypeDef *htim);
-void HAL_UARTEx_RxEventCallback_USER(UART_HandleTypeDef *huart, uint16_t size); // 处理UART接收事件
-void USR_RECALL(void);
+
 #ifdef __cplusplus
 }
 #endif

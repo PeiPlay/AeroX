@@ -19,6 +19,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "dma.h"
+#include "fdcan.h"
 #include "i2c.h"
 #include "memorymap.h"
 #include "spi.h"
@@ -29,6 +31,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "test.h"
+#include "appCallback.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,6 +57,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 static void MPU_Config(void);
 void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
@@ -91,12 +95,16 @@ int main(void)
   /* Configure the system clock */
   SystemClock_Config();
 
+  /* Configure the peripherals common clocks */
+  PeriphCommonClock_Config();
+
   /* USER CODE BEGIN SysInit */
 
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_SPI2_Init();
   MX_TIM1_Init();
   MX_TIM6_Init();
@@ -113,18 +121,10 @@ int main(void)
   MX_UART8_Init();
   MX_UART9_Init();
   MX_USART6_UART_Init();
+  MX_FDCAN1_Init();
+  MX_FDCAN2_Init();
   /* USER CODE BEGIN 2 */
 
-
-//  //串口7空闲DMA接收
-//  HAL_UARTEx_ReceiveToIdle_DMA(&huart7, buffer, sizeof(buffer));
-
-//  while (1)
-//  {
-//    /* code */
-//  }
-//HAL_UARTEx_ReceiveToIdle_DMA(&huart7, buffer, sizeof(buffer)); // 重新启动DMA接收
-  
 
   /* USER CODE END 2 */
 
@@ -209,10 +209,44 @@ void SystemClock_Config(void)
   }
 }
 
+/**
+  * @brief Peripherals Common Clock Configuration
+  * @retval None
+  */
+void PeriphCommonClock_Config(void)
+{
+  RCC_PeriphCLKInitTypeDef PeriphClkInitStruct = {0};
+
+  /** Initializes the peripherals clock
+  */
+  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_FDCAN;
+  PeriphClkInitStruct.PLL2.PLL2M = 32;
+  PeriphClkInitStruct.PLL2.PLL2N = 129;
+  PeriphClkInitStruct.PLL2.PLL2P = 2;
+  PeriphClkInitStruct.PLL2.PLL2Q = 2;
+  PeriphClkInitStruct.PLL2.PLL2R = 2;
+  PeriphClkInitStruct.PLL2.PLL2RGE = RCC_PLL2VCIRANGE_1;
+  PeriphClkInitStruct.PLL2.PLL2VCOSEL = RCC_PLL2VCOWIDE;
+  PeriphClkInitStruct.PLL2.PLL2FRACN = 0;
+  PeriphClkInitStruct.FdcanClockSelection = RCC_FDCANCLKSOURCE_PLL2;
+  if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
 /* USER CODE BEGIN 4 */
-// void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size){
-//     HAL_UARTEx_RxEventCallback_USER(huart, size); // 调用用户回调函数
-// }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  APP_GPIO_EXTI_Callback(GPIO_Pin);
+}
+
+//串口空闲回调函数
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+  APP_UART_RxCpltCallback(huart);
+}
 
 /* USER CODE END 4 */
 
@@ -263,6 +297,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   }
   /* USER CODE BEGIN Callback 1 */
 
+  APP_TIM_PeriodElapsedCallback(htim);
   /* USER CODE END Callback 1 */
 }
 

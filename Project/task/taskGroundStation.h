@@ -1,5 +1,5 @@
-#ifndef __NRF_COMMU_H
-#define __NRF_COMMU_H
+#ifndef TASK_GROUND_STATION_H
+#define TASK_GROUND_STATION_H
 #include "main.h"
 
 
@@ -8,7 +8,7 @@ typedef struct __attribute__((packed))
     uint16_t ball_state:12;     // 球状态
     uint16_t start_dir:1;       // 启动方向
     uint16_t reserve:3;         // 保留位
-} commu_nrf_field_info_t; // 2 bytes
+} ground_station_field_info_t; // 2 bytes
 
 typedef struct __attribute__((packed))
 {
@@ -21,21 +21,17 @@ typedef struct __attribute__((packed))
         int8_t left_x;
         int8_t left_y;
     } rockers;
-} commu_nrf_keyboard_state_t; // 12 bytes
+} ground_station_keyboard_state_t; // 12 bytes
 
 typedef struct __attribute__((packed))
 {
-    commu_nrf_field_info_t field_info;
-    commu_nrf_keyboard_state_t keyboard;
-} commu_nrf_rx_t; // 14 bytes
+    ground_station_field_info_t field_info;
+    ground_station_keyboard_state_t keyboard;
+} ground_station_rx_t; // 14 bytes
 
-extern commu_nrf_rx_t commu_nrf_rx;
+void ground_station_rx_callback(uint8_t channel, uint8_t* data, uint8_t len);
 
-// NRF通信回调
-void commu_nrf_rx_callback(uint8_t channel, uint8_t* data, uint8_t len);
-
+void taskGroundStation_Init(void* argument);
 
 
-
-
-#endif // __NRF_COMMU_H
+#endif // TASK_GROUND_STATION_H

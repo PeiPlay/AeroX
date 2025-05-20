@@ -144,7 +144,7 @@ public:
      * @param dt 时间增量 (s)，用于PID计算
      * @details 执行姿态读取、串级PID计算和电机输出更新
      */
-    virtual void update(float dt);
+    virtual void update();
 
     /**
      * @brief 使所有电机停转

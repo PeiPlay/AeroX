@@ -9,8 +9,8 @@ static constexpr float MAX_PULSE_US = BASE_PULSE_US + CONTROL_RANGE_US; // 2000.
 static constexpr float PWM_PERIOD_US = 2000.0f;                         // PWM 周期为 2ms = 2000us
 
 
-SdcDualMotor::SdcDualMotor(TIM_HandleTypeDef *htim, uint32_t tim_channel, bool reversed)
-    : Motor(reversed), htim_(htim), tim_channel_(tim_channel), timer_arr_val_(0), throttle_limit_factor_(0.5f), current_compare_value_(0)
+SdcDualMotor::SdcDualMotor(TIM_HandleTypeDef *htim, uint32_t tim_channel, bool reversed, float throttle_limit)
+    : Motor(reversed), htim_(htim), tim_channel_(tim_channel), timer_arr_val_(0), throttle_limit_factor_(throttle_limit), current_compare_value_(0)
 {
     // timer_arr_val_ 将在 init() 中获取
 }

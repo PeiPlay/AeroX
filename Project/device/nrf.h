@@ -35,10 +35,10 @@ typedef struct
 
     enum Nrf_TxState_t
     {
+        Nrf_Transmit_Idle,
         Nrf_Transmit_Ongoing,
         Nrf_Transmit_Success,
         Nrf_Transmit_Failed,
-        Nrf_Transmit_Idle
     } tx_state;           //NRF发送状态
     enum Nrf_Mode_t
     {

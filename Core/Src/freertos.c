@@ -68,6 +68,13 @@ const osThreadAttr_t AttitudeIMUTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityAboveNormal,
 };
+/* Definitions for StabilizeTask */
+osThreadId_t StabilizeTaskHandle;
+const osThreadAttr_t StabilizeTask_attributes = {
+  .name = "StabilizeTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -77,6 +84,7 @@ const osThreadAttr_t AttitudeIMUTask_attributes = {
 void StartDefaultTask(void *argument);
 void StartDebugTask(void *argument);
 void StartAttitudeIMUTask(void *argument);
+void StartStabilizeTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -115,6 +123,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of AttitudeIMUTask */
   AttitudeIMUTaskHandle = osThreadNew(StartAttitudeIMUTask, NULL, &AttitudeIMUTask_attributes);
+
+  /* creation of StabilizeTask */
+  StabilizeTaskHandle = osThreadNew(StartStabilizeTask, NULL, &StabilizeTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -178,6 +189,24 @@ __weak void StartAttitudeIMUTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartAttitudeIMUTask */
+}
+
+/* USER CODE BEGIN Header_StartStabilizeTask */
+/**
+* @brief Function implementing the StabilizeTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartStabilizeTask */
+__weak void StartStabilizeTask(void *argument)
+{
+  /* USER CODE BEGIN StartStabilizeTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartStabilizeTask */
 }
 
 /* Private application code --------------------------------------------------*/
