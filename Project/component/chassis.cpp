@@ -81,33 +81,50 @@ void Chassis::update() {
     }
 
     // 1. 读取当前姿态和角速度
-    config_.attitudeMgr->getAttitude(status_.currentRoll, status_.currentPitch, status_.currentYaw);
-    config_.attitudeMgr->getGyro(status_.currentGyro);
+    // 从AttitudeManager获取的是IMU直接输出的角度和角速度
+    config_.attitudeMgr->getAttitude(status_.imuRoll, status_.imuPitch, status_.imuYaw);
+    config_.attitudeMgr->getGyro(status_.imuGyro);
+
+    // 根据chassis.md的定义，将IMU角度转换为机体坐标系角度
+    // phi_body (roll) = +IMU.roll
+    // theta_body (pitch) = -IMU.pitch
+    // psi_body (yaw) = -IMU.yaw
+    status_.chassisRoll = status_.imuRoll;
+    status_.chassisPitch = -status_.imuPitch;
+    status_.chassisYaw = -status_.imuYaw;
+
+    // 同样地转换角速度
+    // chassisRollRate = +imuRollRate
+    // chassisPitchRate = -imuPitchRate
+    // chassisYawRate = -imuYawRate
+    status_.chassisGyro[0] = status_.imuGyro[0]; // Roll rate
+    status_.chassisGyro[1] = -status_.imuGyro[1]; // Pitch rate
+    status_.chassisGyro[2] = -status_.imuGyro[2]; // Yaw rate
     // 高度读取和状态更新已移除
 
     // 2. 外环PID (角度环) -> 目标角速度
-    // Assuming PID_POSITION and PID_TYPE_PID as default from PidController::update signature
+    // 使用转换后的机体坐标系角度作为PID的当前值
     if (config_.anglePIDs[PID_ROLL_ANGLE]) {
-        status_.targetRollRateCmd = config_.anglePIDs[PID_ROLL_ANGLE]->update(target_.roll, status_.currentRoll);
+        status_.targetRollRateCmd = config_.anglePIDs[PID_ROLL_ANGLE]->update(target_.roll, status_.chassisRoll);
     }
     if (config_.anglePIDs[PID_PITCH_ANGLE]) {
-        status_.targetPitchRateCmd = config_.anglePIDs[PID_PITCH_ANGLE]->update(target_.pitch, status_.currentPitch);
+        status_.targetPitchRateCmd = config_.anglePIDs[PID_PITCH_ANGLE]->update(target_.pitch, status_.chassisPitch);
     }
     if (config_.anglePIDs[PID_YAW_ANGLE]) { 
-        status_.targetYawRateCmd = config_.anglePIDs[PID_YAW_ANGLE]->update(target_.yaw, status_.currentYaw);
+        status_.targetYawRateCmd = config_.anglePIDs[PID_YAW_ANGLE]->update(target_.yaw, status_.chassisYaw);
     }
 
 
     // 3. 内环PID (角速度环) -> 控制指令
-    // Assuming PID_POSITION and PID_TYPE_PID as default
+    // 使用转换后的机体坐标系角速度作为PID的当前值
     if (config_.ratePIDs[PID_ROLL_RATE]) {
-        status_.rollCmd = config_.ratePIDs[PID_ROLL_RATE]->update(status_.targetRollRateCmd, status_.currentGyro[0]);
+        status_.rollCmd = config_.ratePIDs[PID_ROLL_RATE]->update(status_.targetRollRateCmd, status_.chassisGyro[0]);
     }
     if (config_.ratePIDs[PID_PITCH_RATE]) {
-        status_.pitchCmd = config_.ratePIDs[PID_PITCH_RATE]->update(status_.targetPitchRateCmd, status_.currentGyro[1]);
+        status_.pitchCmd = config_.ratePIDs[PID_PITCH_RATE]->update(status_.targetPitchRateCmd, status_.chassisGyro[1]);
     }
     if (config_.ratePIDs[PID_YAW_RATE]) {
-        status_.yawCmd = config_.ratePIDs[PID_YAW_RATE]->update(status_.targetYawRateCmd, status_.currentGyro[2]);
+        status_.yawCmd = config_.ratePIDs[PID_YAW_RATE]->update(status_.targetYawRateCmd, status_.chassisGyro[2]);
     }
 
     // 4. 计算油门输入
@@ -154,20 +171,28 @@ void Chassis::mixer(float throttle, float rollCmd, float pitchCmd, float yawCmd)
     // 假设 PID 输出已经是合适的比例，可以直接加减。
     // throttle 参数现在直接是 0-100 的尺度。
 
-    float motor_front_right, motor_rear_right, motor_rear_left, motor_front_left;
+    // 新的电机索引和混合逻辑 (参考 chassis.md 和标准 X 型四旋翼)
+    // MOTOR_FRONT_RIGHT (0) -> 电机1 (右上, CCW)
+    // MOTOR_FRONT_LEFT  (1) -> 电机2 (左上, CW)
+    // MOTOR_REAR_LEFT   (2) -> 电机3 (左下, CCW)
+    // MOTOR_REAR_RIGHT  (3) -> 电机4 (右下, CW)
 
-    // 标准 X 型四旋翼混合逻辑
-    // throttle 是基础集体推力 (0-100)
-    motor_front_right = throttle - rollCmd + pitchCmd - yawCmd;
-    motor_rear_right  = throttle - rollCmd - pitchCmd + yawCmd;
-    motor_rear_left   = throttle + rollCmd - pitchCmd - yawCmd;
-    motor_front_left  = throttle + rollCmd + pitchCmd + yawCmd;
+    // 正 rollCmd: 右滚 (右侧下沉, 左侧上升)
+    // 正 pitchCmd: 机头向上 (前侧上升, 后侧下沉)
+    // 正 yawCmd: 顺时针偏航 (机头向右)
 
-    // 限制每个电机的输出在 -100.0 到 100.0 之间，以匹配 motor.h 的 setThrottle 范围
-    status_.motorOutputs[MOTOR_FRONT_RIGHT] = constrain(motor_front_right, -100.0f, 100.0f);
-    status_.motorOutputs[MOTOR_REAR_RIGHT]  = constrain(motor_rear_right,  -100.0f, 100.0f);
-    status_.motorOutputs[MOTOR_REAR_LEFT]   = constrain(motor_rear_left,   -100.0f, 100.0f);
-    status_.motorOutputs[MOTOR_FRONT_LEFT]  = constrain(motor_front_left,  -100.0f, 100.0f);
+    float motor_fr, motor_fl, motor_rl, motor_rr;
+
+    motor_fr = throttle - rollCmd + pitchCmd + yawCmd; // M0 (Motor 1)
+    motor_fl = throttle + rollCmd + pitchCmd - yawCmd; // M1 (Motor 2)
+    motor_rl = throttle + rollCmd - pitchCmd + yawCmd; // M2 (Motor 3)
+    motor_rr = throttle - rollCmd - pitchCmd - yawCmd; // M3 (Motor 4)
+
+    // 限制每个电机的输出在 20.0 到 100.0 之间，以匹配 motor.h 的 setThrottle 范围
+    status_.motorOutputs[MOTOR_FRONT_RIGHT] = constrain(motor_fr, 0.0f, 100.0f);
+    status_.motorOutputs[MOTOR_FRONT_LEFT]  = constrain(motor_fl, 0.0f, 100.0f);
+    status_.motorOutputs[MOTOR_REAR_LEFT]   = constrain(motor_rl, 0.0f, 100.0f);
+    status_.motorOutputs[MOTOR_REAR_RIGHT]  = constrain(motor_rr, 0.0f, 100.0f);
 }
 
 

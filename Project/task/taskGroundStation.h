@@ -29,6 +29,14 @@ typedef struct __attribute__((packed))
     ground_station_keyboard_state_t keyboard;
 } ground_station_rx_t; // 14 bytes
 
+
+typedef struct __attribute__((packed))
+{
+    uint8_t is_online; // 是否在线
+    uint64_t last_rx_us; // 最后接收时间
+
+} ground_station_status_t; // 16 bytes
+
 void ground_station_rx_callback(uint8_t channel, uint8_t* data, uint8_t len);
 
 void taskGroundStation_Init(void* argument);

@@ -8,9 +8,9 @@
 
 // 定义电机索引，便于理解
 #define MOTOR_FRONT_RIGHT 0 // 电机1 (右上)
-#define MOTOR_REAR_RIGHT  1 // 电机2 (右下)
+#define MOTOR_FRONT_LEFT  1 // 电机2 (左上)
 #define MOTOR_REAR_LEFT   2 // 电机3 (左下)
-#define MOTOR_FRONT_LEFT  3 // 电机4 (左上)
+#define MOTOR_REAR_RIGHT  3 // 电机4 (右下)
 
 // 定义PID索引
 #define PID_ROLL_ANGLE  0
@@ -74,11 +74,17 @@ public:
      * @brief 内部状态结构体
      */
     struct Status {
-        // 当前传感器读数
-        float currentRoll = 0.0f;    // rad
-        float currentPitch = 0.0f;   // rad
-        float currentYaw = 0.0f;     // rad
-        float currentGyro[3] = {0.0f, 0.0f, 0.0f}; // rad/s, [roll, pitch, yaw]
+        // 当前传感器读数 (原始IMU值)
+        float imuRoll = 0.0f;    // rad, 来自AttitudeManager
+        float imuPitch = 0.0f;   // rad, 来自AttitudeManager
+        float imuYaw = 0.0f;     // rad, 来自AttitudeManager
+        float imuGyro[3] = {0.0f, 0.0f, 0.0f}; // rad/s, [roll, pitch, yaw], 来自AttitudeManager
+
+        // 转换到机体坐标系后的姿态角和角速度
+        float chassisRoll = 0.0f;    // rad
+        float chassisPitch = 0.0f;   // rad
+        float chassisYaw = 0.0f;     // rad
+        float chassisGyro[3] = {0.0f, 0.0f, 0.0f}; // rad/s, [roll, pitch, yaw]
 
         // PID 中间计算结果
         float targetRollRateCmd = 0.0f;  // 角度环输出的目标横滚角速度 (rad/s)

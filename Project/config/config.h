@@ -80,8 +80,8 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_ROLL_RAD_SET                                     \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 15.0f, .ki = 0.0f, .kd = 0.7f,                         \
+        .maxOutput = 8.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -89,8 +89,8 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_PITCH_RAD_SET                                    \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 15.0f, .ki = 0.0f, .kd = 0.7f,                        \
+        .maxOutput = 8.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -98,8 +98,8 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_YAW_RAD_SET                                      \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 7.0f, .ki = 0.0f, .kd = 0.9f,                         \
+        .maxOutput = 8.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -112,8 +112,8 @@ extern PidController pid_yaw_rad;
 #define CONFIG_PID_ROLL_SPD_SET                                     \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 6.5f, .ki = 0.0f, .kd = 0.9f,                         \
+        .maxOutput = 95.0f, .maxIntegral = 0.0f,                    \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -121,8 +121,8 @@ extern PidController pid_yaw_rad;
 #define CONFIG_PID_PITCH_SPD_SET                                    \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 6.5f, .ki = 0.0f, .kd = 0.9f,                         \
+        .maxOutput = 95.0f, .maxIntegral = 0.0f,                    \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -130,8 +130,8 @@ extern PidController pid_yaw_rad;
 #define CONFIG_PID_YAW_SPD_SET                                      \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 6.5f, .ki = 0.0f, .kd = 0.9f,                         \
+        .maxOutput = 95.0f, .maxIntegral = 0.0f,                    \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
