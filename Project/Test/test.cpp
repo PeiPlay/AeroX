@@ -21,13 +21,9 @@
 #include "slope_smoother.h" // 引入斜坡平滑器头文件
 
 
-
-
-
 extern "C" {
     void test_cpp_task(void) {
 
-    
     }
     void test_cpp_debug(void) {
 

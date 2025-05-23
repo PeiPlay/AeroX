@@ -5,15 +5,15 @@
 #include "taskGroundStation.h"
 #include "taskAttitude.h"
 #include "taskStabilize.h"
-
+#include "taskGroundStation.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 void taskAttitudeIMU(void *argument);
+void taskGroundStation(void *argument);
 void taskStabilize(void *argument);
 void taskManager_Init(void* argument);  // 添加函数声明
-
 #ifdef __cplusplus
 }
 #endif

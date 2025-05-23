@@ -20,6 +20,8 @@
 #include "spl06.h"
 #include "nrf.h"
 #include "ws2812.h"
+#include "lidar.h" 
+
 // component
 #include "chassis.h"
 // debug
@@ -153,6 +155,8 @@ extern PidController pid_yaw_spd;
                       &pid_yaw_spd }                                \
     }
 extern Chassis chassis;
+
+extern Lidar lidar;
 
 #endif
 

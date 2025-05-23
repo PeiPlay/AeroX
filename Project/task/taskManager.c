@@ -38,3 +38,16 @@ void StartStabilizeTask(void *argument)
     }
     /* USER CODE END StartStabilizeTask */
 }
+
+void StartGroundStationTask(void *argument)
+{
+  /* USER CODE BEGIN StartGroundStationTask */
+  taskGroundStation(argument); // 调用任务函数
+
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartGroundStationTask */
+}

@@ -34,3 +34,5 @@ PidController pid_yaw_spd(CONFIG_PID_YAW_SPD_SET);
 
 // 飞控底盘
 Chassis chassis(CONFIG_CHASSIS_SET);
+
+Lidar lidar(&huart1);

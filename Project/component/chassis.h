@@ -127,11 +127,21 @@ public:
      */
     virtual void setTargetAttitude(float roll, float pitch, float yaw);
 
+    virtual float getTargetRoll(void);
+    virtual float getTargetPitch(void);
+    virtual float getTargetYaw(void);
+
     /**
      * @brief 设置直接控制油门值
      * @param throttle 油门值 (0.0 to 100.0)
      */
     virtual void setThrottleOverride(float throttle);
+
+    /**
+     * @brief 获取当前油门值
+     * @return 油门值 (0.0 to 100.0)
+     */
+    virtual float getThrottleOverride(void);
 
     /**
      * @brief 设置叠加油门值

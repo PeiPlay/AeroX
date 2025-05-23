@@ -75,6 +75,13 @@ const osThreadAttr_t StabilizeTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
+/* Definitions for GroundStationTa */
+osThreadId_t GroundStationTaHandle;
+const osThreadAttr_t GroundStationTa_attributes = {
+  .name = "GroundStationTa",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -85,6 +92,7 @@ void StartDefaultTask(void *argument);
 void StartDebugTask(void *argument);
 void StartAttitudeIMUTask(void *argument);
 void StartStabilizeTask(void *argument);
+void StartGroundStationTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -126,6 +134,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of StabilizeTask */
   StabilizeTaskHandle = osThreadNew(StartStabilizeTask, NULL, &StabilizeTask_attributes);
+
+  /* creation of GroundStationTa */
+  GroundStationTaHandle = osThreadNew(StartGroundStationTask, NULL, &GroundStationTa_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -207,6 +218,24 @@ __weak void StartStabilizeTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartStabilizeTask */
+}
+
+/* USER CODE BEGIN Header_StartGroundStationTask */
+/**
+* @brief Function implementing the GroundStationTa thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartGroundStationTask */
+__weak void StartGroundStationTask(void *argument)
+{
+  /* USER CODE BEGIN StartGroundStationTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartGroundStationTask */
 }
 
 /* Private application code --------------------------------------------------*/

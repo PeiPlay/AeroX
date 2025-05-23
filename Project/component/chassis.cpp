@@ -2,6 +2,7 @@
 #include <math.h>
 #include <algorithm> // for std::max, std::min
 #include <cstring>   // for memcpy
+#include "utils.h"
 
 // Chassis 类的构造函数实现
 Chassis::Chassis(const ChassisDependencies& deps) :
@@ -52,14 +53,19 @@ bool Chassis::init() {
 }
 
 void Chassis::setTargetAttitude(float roll, float pitch, float yaw) {
-    target_.roll = roll;
-    target_.pitch = pitch;
-    target_.yaw = yaw;
+    
+    target_.roll = math_normalize_radian_pi(roll);
+    target_.pitch = math_normalize_radian_pi(pitch);
+    target_.yaw = math_normalize_radian_pi(yaw);
     // 注意：这里仅设置目标角度，具体的角速度目标将在 update() 中由角度PID计算得出
 }
 
 void Chassis::setThrottleOverride(float throttle) {
     target_.throttleOverride = constrain(throttle, 0.0f, 100.0f);
+}
+
+float Chassis::getThrottleOverride(void) {
+    return target_.throttleOverride;
 }
 
 void Chassis::setThrottleAdditive(float additiveThrottle) {
@@ -105,13 +111,13 @@ void Chassis::update() {
     // 2. 外环PID (角度环) -> 目标角速度
     // 使用转换后的机体坐标系角度作为PID的当前值
     if (config_.anglePIDs[PID_ROLL_ANGLE]) {
-        status_.targetRollRateCmd = config_.anglePIDs[PID_ROLL_ANGLE]->update(target_.roll, status_.chassisRoll);
+        status_.targetRollRateCmd = config_.anglePIDs[PID_ROLL_ANGLE]->update(math_normalize_radian_pi(target_.roll - status_.chassisRoll), 0.0f);
     }
     if (config_.anglePIDs[PID_PITCH_ANGLE]) {
-        status_.targetPitchRateCmd = config_.anglePIDs[PID_PITCH_ANGLE]->update(target_.pitch, status_.chassisPitch);
+        status_.targetPitchRateCmd = config_.anglePIDs[PID_PITCH_ANGLE]->update(math_normalize_radian_pi(target_.pitch - status_.chassisPitch), 0.0f);
     }
     if (config_.anglePIDs[PID_YAW_ANGLE]) { 
-        status_.targetYawRateCmd = config_.anglePIDs[PID_YAW_ANGLE]->update(target_.yaw, status_.chassisYaw);
+        status_.targetYawRateCmd = config_.anglePIDs[PID_YAW_ANGLE]->update(math_normalize_radian_pi(target_.yaw - status_.chassisYaw), 0.0f);
     }
 
 
@@ -202,3 +208,15 @@ float Chassis::constrain(float value, float minVal, float maxVal) {
 }
 
 // ... 其他方法的具体实现将在此处添加 ...
+float Chassis::getTargetRoll(void)
+{
+    return target_.roll;
+}
+float Chassis::getTargetPitch(void)
+{
+    return target_.pitch;
+}
+float Chassis::getTargetYaw(void)
+{
+    return target_.yaw;
+}

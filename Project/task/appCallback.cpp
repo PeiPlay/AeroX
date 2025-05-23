@@ -20,7 +20,7 @@ void APP_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 }
 void APP_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	upt201.rxCallback(huart); // 调用UPT201的串口空闲回调函数
+    lidar.byteRxCallback(huart); // 调用Lidar的串口接收回调函数
 }
 
 
