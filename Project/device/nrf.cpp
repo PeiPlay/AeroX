@@ -487,8 +487,8 @@ uint8_t _Nrf_CheckConnectivity(Nrf_t *nrf)
 }
 void Nrf_Init(Nrf_t *nrf)
 {
-    while (_Nrf_CheckConnectivity(nrf) == 0)
-        ;
+    while (_Nrf_CheckConnectivity(nrf) == 0);
+	_Nrf_CheckConnectivity(nrf);
     _Nrf_Set_Config(nrf);
     _NRF_REG_STATUS status;
     _Nrf_Read_RegStruct_8bits(nrf, &status, NRF_REG_STATUS);  // 读取配置寄存器

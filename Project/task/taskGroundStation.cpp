@@ -90,6 +90,7 @@ void taskGroundStation(void *argument)
                 {
                     ground_station_status_data.is_connected = 1;
                     ground_station_status_data.recovery_packet_streak = 0; // 清除恢复状态
+					nrf.transmit(dummy, sizeof(dummy));
                 }
                 else
                 {

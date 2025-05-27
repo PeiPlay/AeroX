@@ -7,6 +7,9 @@
 // 引导点间距宏定义（单位：米）
 #define GUIDE_POINT_INTERVAL 0.05f
 
+// 最大目标点数量
+#define MAX_TARGET_POINTS 16
+
 // 路径状态枚举
 enum class PathState {
     IDLE,                    // 空闲状态
@@ -15,30 +18,37 @@ enum class PathState {
     COMPLETED               // 路径完成
 };
 
-// Path路径类（模板类，编译时确定目标点数量）
-template<uint32_t N>
+// Path路径类
 class Path {
 private:
-    Point* target_points_[N];       // 目标点指针数组
-    Point guide_point_;             // 引导点（单一实例）
-    ToleranceParams guide_tolerance_; // 引导点容差参数
+    Point* target_points_[MAX_TARGET_POINTS]; // 目标点指针数组
+    uint32_t target_count_;                   // 实际目标点数量
     
-    uint32_t current_target_index_; // 当前目标点索引
-    uint32_t current_step_;         // 当前插值步数
-    uint32_t total_steps_;          // 当前段总步数
-    float step_distance_;           // 单步距离
-    PathState state_;               // 路径状态
+    Point guide_point_;                       // 引导点（单一实例）
+    ToleranceParams guide_tolerance_;         // 引导点容差参数
     
-    Pose start_pose_;               // 当前段起始位姿
-    Pose end_pose_;                 // 当前段结束位姿
+    uint32_t current_target_index_;           // 当前目标点索引
+    uint32_t current_step_;                   // 当前插值步数
+    uint32_t total_steps_;                    // 当前段总步数
+    float step_distance_;                     // 单步距离
+    PathState state_;                         // 路径状态
+    
+    Pose start_pose_;                         // 当前段起始位姿
+    Pose end_pose_;                           // 当前段结束位姿
     
 public:
     // 构造函数
     Path();
-    Path(Point* points[N], const ToleranceParams& guide_tolerance);
+    Path(const ToleranceParams& guide_tolerance);
     
-    // 初始化路径（设置目标点）
-    void initializePath(Point* points[N]);
+    // 添加目标点
+    bool addTargetPoint(Point* point);
+    
+    // 清空所有目标点
+    void clearTargetPoints();
+    
+    // 获取目标点数量
+    uint32_t getTargetCount() const;
     
     // 设置引导点容差参数
     void setGuideParameters(const ToleranceParams& tolerance);
@@ -64,6 +74,9 @@ public:
     // 获取当前引导点位姿
     const Pose& getCurrentGuidePose() const;
     
+    // 计算当前位置与指定目标点的位姿差值
+    void calculatePoseDiffToTarget(const Pose& current_pose, uint32_t target_index, PoseDiff& diff) const;
+    
 private:
     // 计算两点间的插值步数和单步距离
     void calculateInterpolationParams(const Pose& start, const Pose& end);
@@ -79,9 +92,9 @@ private:
     
     // 检查是否有效的目标点数组
     bool isValidTargetPoints() const;
+    
+    // 计算位姿差值（内部使用）
+    void calculatePoseDiff(const Pose& current, const Pose& target, PoseDiff& diff);
 };
-
-// 模板类实现包含在头文件中
-#include "path_impl.h"
 
 #endif // PATH_H

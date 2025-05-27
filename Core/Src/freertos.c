@@ -54,13 +54,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for debugTask */
-osThreadId_t debugTaskHandle;
-const osThreadAttr_t debugTask_attributes = {
-  .name = "debugTask",
-  .stack_size = 512 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for AttitudeIMUTask */
 osThreadId_t AttitudeIMUTaskHandle;
 const osThreadAttr_t AttitudeIMUTask_attributes = {
@@ -82,6 +75,20 @@ const osThreadAttr_t GroundStationTa_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for CommuCheckTask */
+osThreadId_t CommuCheckTaskHandle;
+const osThreadAttr_t CommuCheckTask_attributes = {
+  .name = "CommuCheckTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
+/* Definitions for NrfResponseTask */
+osThreadId_t NrfResponseTaskHandle;
+const osThreadAttr_t NrfResponseTask_attributes = {
+  .name = "NrfResponseTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -89,10 +96,11 @@ const osThreadAttr_t GroundStationTa_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-void StartDebugTask(void *argument);
 void StartAttitudeIMUTask(void *argument);
 void StartStabilizeTask(void *argument);
 void StartGroundStationTask(void *argument);
+void StartCommuCheckTask(void *argument);
+void StartNrfResponseTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -126,9 +134,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
-  /* creation of debugTask */
-  debugTaskHandle = osThreadNew(StartDebugTask, NULL, &debugTask_attributes);
-
   /* creation of AttitudeIMUTask */
   AttitudeIMUTaskHandle = osThreadNew(StartAttitudeIMUTask, NULL, &AttitudeIMUTask_attributes);
 
@@ -137,6 +142,12 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of GroundStationTa */
   GroundStationTaHandle = osThreadNew(StartGroundStationTask, NULL, &GroundStationTa_attributes);
+
+  /* creation of CommuCheckTask */
+  CommuCheckTaskHandle = osThreadNew(StartCommuCheckTask, NULL, &CommuCheckTask_attributes);
+
+  /* creation of NrfResponseTask */
+  NrfResponseTaskHandle = osThreadNew(StartNrfResponseTask, NULL, &NrfResponseTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -164,24 +175,6 @@ __weak void StartDefaultTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
-}
-
-/* USER CODE BEGIN Header_StartDebugTask */
-/**
-* @brief Function implementing the debugTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartDebugTask */
-__weak void StartDebugTask(void *argument)
-{
-  /* USER CODE BEGIN StartDebugTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartDebugTask */
 }
 
 /* USER CODE BEGIN Header_StartAttitudeIMUTask */
@@ -236,6 +229,42 @@ __weak void StartGroundStationTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartGroundStationTask */
+}
+
+/* USER CODE BEGIN Header_StartCommuCheckTask */
+/**
+* @brief Function implementing the CommuCheckTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartCommuCheckTask */
+__weak void StartCommuCheckTask(void *argument)
+{
+  /* USER CODE BEGIN StartCommuCheckTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartCommuCheckTask */
+}
+
+/* USER CODE BEGIN Header_StartNrfResponseTask */
+/**
+* @brief Function implementing the NrfResponseTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartNrfResponseTask */
+__weak void StartNrfResponseTask(void *argument)
+{
+  /* USER CODE BEGIN StartNrfResponseTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartNrfResponseTask */
 }
 
 /* Private application code --------------------------------------------------*/

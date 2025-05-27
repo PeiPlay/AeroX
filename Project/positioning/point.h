@@ -30,6 +30,9 @@ struct ToleranceParams {
     float err_r;        // 位置允许误差（米）
     float err_yaw;      // 偏航角允许误差（弧度）
     uint32_t threshold; // 稳定性检测阈值
+    
+    ToleranceParams() : err_r(0.1f), err_yaw(0.1f), threshold(10) {}
+    ToleranceParams(float r, float yaw, uint32_t th) : err_r(r), err_yaw(yaw), threshold(th) {}
 };
 
 // 目标点类
