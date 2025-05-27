@@ -2,6 +2,9 @@
 #include <math.h>
 #include <algorithm>
 #include <cstring>
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // Move 类的构造函数实现
 Move::Move(const MoveDependencies& deps) :
@@ -31,15 +34,15 @@ bool Move::init() {
         }
     }
 
-    // 初始化雷达
-    if (!config_.lidar->init()) {
-        return false;
-    }
+    // // 初始化雷达
+    // if (!config_.lidar->init()) {
+    //     return false;
+    // }
 
     // 重置目标值
-    target_.x = 0.0f;
-    target_.y = 0.0f;
-    target_.z = 0.0f;
+    target_.x_ground = 0.0f;
+    target_.y_ground = 0.0f;
+    target_.z_ground = 0.0f;
     target_.vx = 0.0f;
     target_.vy = 0.0f;
     target_.vz = 0.0f;
@@ -82,11 +85,6 @@ void Move::getCurrentVelocity(float& vx, float& vy, float& vz) const {
     vz = status_.currentVz_ground;
 }
 
-void Move::getCurrentPositionBody(float& x, float& y, float& z) const {
-    x = status_.currentX_body;
-    y = status_.currentY_body;
-    z = status_.currentZ_body;
-}
 
 void Move::getPositionErrorBody(float& ex, float& ey, float& ez) const {
     ex = status_.errorX_body;
@@ -114,14 +112,6 @@ void Move::update() {
     // 1. 更新传感器数据
     updateSensorData();
 
-    if (!status_.positionValid || !status_.imuValid) {
-        // 如果位置数据或IMU数据无效，清零输出指令
-        status_.rollCmd = 0.0f;
-        status_.pitchCmd = 0.0f;
-        status_.throttleCmd = 0.0f;
-        return;
-    }
-
     // 2. 更新位置误差的坐标转换
     updatePositionErrorTransform();
 
@@ -148,29 +138,22 @@ void Move::update() {
     }
 
     // 4. 内环PID (速度环) -> 姿态指令 (使用机身坐标系速度)
-    if (status_.velocityValid) {
-        // X速度控制 -> 俯仰角指令 (机体坐标系中，X正方向对应机头前进)
-        if (config_.velocityPIDs[PID_X_VELOCITY]) {
-            status_.pitchCmd = config_.velocityPIDs[PID_X_VELOCITY]->update(
-                status_.targetVxCmd, status_.currentVx_body);
-        }
+    // X速度控制 -> 俯仰角指令 (机体坐标系中，X正方向对应机头前进)
+    if (config_.velocityPIDs[PID_X_VELOCITY]) {
+        status_.pitchCmd = config_.velocityPIDs[PID_X_VELOCITY]->update(
+            status_.targetVxCmd, status_.currentVx_body);
+    }
 
-        // Y速度控制 -> 横滚角指令 (机体坐标系中，Y正方向对应机体右侧)
-        if (config_.velocityPIDs[PID_Y_VELOCITY]) {
-            status_.rollCmd = config_.velocityPIDs[PID_Y_VELOCITY]->update(
-                status_.targetVyCmd, status_.currentVy_body);
-        }
+    // Y速度控制 -> 横滚角指令 (机体坐标系中，Y正方向对应机体右侧)
+    if (config_.velocityPIDs[PID_Y_VELOCITY]) {
+        status_.rollCmd = config_.velocityPIDs[PID_Y_VELOCITY]->update(
+            status_.targetVyCmd, status_.currentVy_body);
+    }
 
-        // Z速度控制 -> 油门指令
-        if (config_.velocityPIDs[PID_Z_VELOCITY]) {
-            status_.throttleCmd = config_.velocityPIDs[PID_Z_VELOCITY]->update(
-                status_.targetVzCmd, status_.currentVz_body);
-        }
-    } else {
-        // 如果速度数据无效，清零输出
-        status_.rollCmd = 0.0f;
-        status_.pitchCmd = 0.0f;
-        status_.throttleCmd = 0.0f;
+    // Z速度控制 -> 油门指令
+    if (config_.velocityPIDs[PID_Z_VELOCITY]) {
+        status_.throttleCmd = config_.velocityPIDs[PID_Z_VELOCITY]->update(
+            status_.targetVzCmd, status_.currentVz_body);
     }
 
     // 5. 限制输出范围
@@ -199,20 +182,50 @@ void Move::reset() {
     status_.targetVzCmd = 0.0f;
 }
 
+void Move::setOffset(float offset_x, float offset_y, float offset_z, float offset_yaw) {
+    status_.offsetX = offset_x;
+    status_.offsetY = offset_y;
+    status_.offsetZ = offset_z;
+    status_.offsetYaw = normalizeAngle(offset_yaw);
+}
+
+void Move::getOffset(float& offset_x, float& offset_y, float& offset_z, float& offset_yaw) const {
+    offset_x = status_.offsetX;
+    offset_y = status_.offsetY;
+    offset_z = status_.offsetZ;
+    offset_yaw = status_.offsetYaw;
+}
+
+void Move::setCurrentAsOrigin() {
+    if (!config_.lidar) {
+        return;
+    }
+
+    // 获取当前传感器原始数据
+    LidarPoseData pose_data = config_.lidar->getPoseData();
+    LidarImuData imu_data = config_.lidar->getImuData();
+    
+    if (pose_data.valid && imu_data.valid) {
+        // 将当前传感器读数设为偏移量
+        status_.offsetX = pose_data.x;
+        status_.offsetY = pose_data.y;
+        status_.offsetZ = pose_data.z;
+        status_.offsetYaw = normalizeAngle(imu_data.yaw);
+    }
+}
+
 void Move::updateSensorData() {
     if (!config_.lidar) {
         return;
     }
 
-    // 获取位置数据 (地面坐标系)
+    // 获取位置数据 (地面坐标系) - 原始传感器数据
     LidarPoseData pose_data = config_.lidar->getPoseData();
     if (pose_data.valid) {
-        status_.currentX_ground = pose_data.x;
-        status_.currentY_ground = pose_data.y;
-        status_.currentZ_ground = pose_data.z;
-        status_.positionValid = true;
-    } else {
-        status_.positionValid = false;
+        // 应用偏移量：计算坐标 = 原始坐标 - 偏移量
+        status_.currentX_ground = pose_data.x - status_.offsetX;
+        status_.currentY_ground = pose_data.y - status_.offsetY;
+        status_.currentZ_ground = pose_data.z - status_.offsetZ;
     }
 
     // 获取速度数据 (地面坐标系)
@@ -221,26 +234,19 @@ void Move::updateSensorData() {
         status_.currentVx_ground = velocity_data.vx_filtered;
         status_.currentVy_ground = velocity_data.vy_filtered;
         status_.currentVz_ground = velocity_data.vz_filtered;
-        status_.velocityValid = true;
-    } else {
-        status_.velocityValid = false;
     }
 
-    // 获取IMU数据 (偏航角)
+    // 获取IMU数据 (偏航角) - 应用偏移量
     LidarImuData imu_data = config_.lidar->getImuData();
     if (imu_data.valid) {
-        status_.currentYaw = imu_data.yaw;
-        status_.imuValid = true;
-    } else {
-        status_.imuValid = false;
+        // 应用偏移量并归一化：计算角度 = 原始角度 - 偏移角度
+        status_.currentYaw = normalizeAngle(imu_data.yaw - status_.offsetYaw);
     }
 
     // 转换当前速度到机身坐标系
-    if (status_.velocityValid && status_.imuValid) {
-        transformGroundToBody(status_.currentVx_ground, status_.currentVy_ground, status_.currentVz_ground,
-                            status_.currentYaw,
-                            status_.currentVx_body, status_.currentVy_body, status_.currentVz_body);
-    }
+    transformGroundToBody(status_.currentVx_ground, status_.currentVy_ground, status_.currentVz_ground,
+                        status_.currentYaw,
+                        status_.currentVx_body, status_.currentVy_body, status_.currentVz_body);
 }
 
 void Move::transformGroundToBody(float x_ground, float y_ground, float z_ground, 
@@ -264,10 +270,6 @@ void Move::transformGroundToBody(float x_ground, float y_ground, float z_ground,
 }
 
 void Move::updatePositionErrorTransform() {
-    if (!status_.positionValid || !status_.imuValid) {
-        return;
-    }
-    
     // 计算地面坐标系下的位置误差
     float errorX_ground = target_.x_ground - status_.currentX_ground;
     float errorY_ground = target_.y_ground - status_.currentY_ground;
@@ -281,4 +283,14 @@ void Move::updatePositionErrorTransform() {
 
 float Move::constrain(float value, float minVal, float maxVal) {
     return std::max(minVal, std::min(value, maxVal));
+}
+
+float Move::normalizeAngle(float angle) {
+    while (angle > M_PI) {
+        angle -= 2.0f * M_PI;
+    }
+    while (angle < -M_PI) {
+        angle += 2.0f * M_PI;
+    }
+    return angle;
 }

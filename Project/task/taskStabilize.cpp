@@ -1,4 +1,5 @@
 #include "taskStabilize.h"
+#include "taskCommuCheck.h"  // 替换为新的通信检查头文件
 #include "config.h"
 #include "slope_smoother.h"
 #include "utils.h"
@@ -34,34 +35,53 @@ void taskStabilize(void *argument)
     chassis.setThrottleMode(ThrottleMode::DIRECT);
     while (1)
     {
-        if(gs_is_connected != gs_is_connected_prev)
+        if(GS_IS_CONNECTED != gs_is_connected_prev)
         {
-            //motor_smoother.setCurrentValue(chassis.getThrottleOverride());
-            gs_is_connected_prev = gs_is_connected;
+            // 连接状态发生变化
+            gs_is_connected_prev = GS_IS_CONNECTED;
         }
-
-        if(gs_is_connected_prev)
+        
+        if(GS_IS_CONNECTED)
         {
-            float temp = ((gs_rockers.left_y > 0.0f) ? (gs_rockers.left_y / 3.0f) : 0.0f) + 30.0f;
+            // 遥控器正常链接
+
+            float temp = ((GS_ROCKERS.left_y > 0.0f) ? (GS_ROCKERS.left_y / 3.0f) : 0.0f) + 30.0f;
             gs_target_th = temp > 100.0f ? 100.0f : temp;
 
-            temp = math_normalize_radian_pi((-0.00002f * gs_rockers.left_x) + chassis.getTargetYaw());
+            temp = math_normalize_radian_pi((-0.00002f * GS_ROCKERS.left_x) + chassis.getTargetYaw());
             
-            if(gs_switch(0))
+            if(GS_SWITCH(0) && !GS_SWITCH(1))
             {
+                // 操作员希望使用遥控器控制
+                // 设置目标姿态和油门
                 chassis.setTargetAttitude(
-					0.01745f*0.4*0.0f + ((-gs_rockers.right_x) / 128.0f) * 0.01745f * 7, 
-					0.01745f*1.94*0.0f + ((-gs_rockers.right_y) / 128.0f) * 0.01745f * 7, temp);
+					0.01745f*0.4*0.0f + ((-GS_ROCKERS.right_x) / 128.0f) * 0.01745f * 7, 
+					0.01745f*1.94*0.0f + ((-GS_ROCKERS.right_y) / 128.0f) * 0.01745f * 7, temp);
                 chassis.setThrottleOverride(motor_smoother.update(gs_target_th));
             }
-            else
+            else if(!GS_SWITCH(0))
             {
+                // 操作员希望飞机停止
+                // 设置油门为0
                 chassis.setThrottleOverride(motor_smoother.update(0.0f));
+                chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
             }
+            else if(GS_SWITCH(1) && !LIDAR_IS_CONNECTED)
+            {
+                // 操作员希望使用雷达控制，但雷达掉线
+                // 设置为缓降油门
+                chassis.setThrottleOverride(motor_smoother.update(35.0f));
+                chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
+            }
+            // 操作员希望使用自动控制，且雷达正常链接
+            // 直接跳转到update函数即可
         }
         else
         {
-            chassis.setThrottleOverride(motor_smoother.update(30.0f));
+            // 遥控器未连接或掉线
+            // 设置为缓降油门
+            chassis.setThrottleOverride(motor_smoother.update(35.0f));
+            chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
         }
 
         chassis.update();

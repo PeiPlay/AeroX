@@ -20,10 +20,11 @@
 #include "spl06.h"
 #include "nrf.h"
 #include "ws2812.h"
-#include "lidar.h" 
+#include "lidar.h"
 
 // component
 #include "chassis.h"
+#include "move.h"
 // debug
 #include "vofa.h"
 //
@@ -66,7 +67,7 @@ extern AttitudeManager attitude_manager;
     }
 
 extern Nrf nrf;
-extern ground_station_rx_t ground_station_rx_data;
+extern ground_station_rx_data_t ground_station_rx_data;
 
 // UPT201 配置
 extern UPT20X upt201;
@@ -82,7 +83,7 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_ROLL_RAD_SET                                     \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 15.0f/2.0f, .ki = 0.0f, .kd = 0.7f,                         \
+        .kp = 15.0f / 2.0f, .ki = 0.0f, .kd = 0.7f,                 \
         .maxOutput = 5.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
@@ -91,7 +92,7 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_PITCH_RAD_SET                                    \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 15.0f/2.0f, .ki = 0.0f, .kd = 0.7f,                        \
+        .kp = 15.0f / 2.0f, .ki = 0.0f, .kd = 0.7f,                 \
         .maxOutput = 5.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
@@ -100,7 +101,7 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_YAW_RAD_SET                                      \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 7.0f/2.0f, .ki = 0.0f, .kd = 0.9f,                         \
+        .kp = 7.0f / 2.0f, .ki = 0.0f, .kd = 0.9f,                  \
         .maxOutput = 3.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
@@ -109,7 +110,7 @@ extern PidController pid_roll_rad;
 extern PidController pid_pitch_rad;
 extern PidController pid_yaw_rad;
 
-//三轴角速度pid(内环)
+// 三轴角速度pid(内环)
 
 #define CONFIG_PID_ROLL_SPD_SET                                     \
     (PidConfig_t)                                                   \
@@ -142,6 +143,8 @@ extern PidController pid_roll_spd;
 extern PidController pid_pitch_spd;
 extern PidController pid_yaw_spd;
 
+extern Lidar lidar;
+
 // 飞控底盘
 
 #define CONFIG_CHASSIS_SET                                          \
@@ -156,7 +159,81 @@ extern PidController pid_yaw_spd;
     }
 extern Chassis chassis;
 
-extern Lidar lidar;
+// 运动控制
+
+#define CONFIG_PID_X_VEL_SET                                        \
+    (PidConfig_t)                                                   \
+    {                                                               \
+        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
+        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
+        .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
+    }
+
+#define CONFIG_PID_Y_VEL_SET                                        \
+    (PidConfig_t)                                                   \
+    {                                                               \
+        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
+        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
+        .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
+    }
+
+#define CONFIG_PID_Z_VEL_SET                                        \
+    (PidConfig_t)                                                   \
+    {                                                               \
+        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
+        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
+        .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
+    }
+
+extern PidController pid_x_vel;
+extern PidController pid_y_vel;
+extern PidController pid_z_vel;
+
+#define CONFIG_PID_X_POS_SET                                        \
+    (PidConfig_t)                                                   \
+    {                                                               \
+        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
+        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
+        .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
+    }
+
+#define CONFIG_PID_Y_POS_SET                                        \
+    (PidConfig_t)                                                   \
+    {                                                               \
+        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
+        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
+        .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
+    }
+
+#define CONFIG_PID_Z_POS_SET                                        \
+    (PidConfig_t)                                                   \
+    {                                                               \
+        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
+        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
+        .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
+    }
+
+extern PidController pid_x_pos;
+extern PidController pid_y_pos;
+extern PidController pid_z_pos;
+
+#define CONFIG_MOVE_SET                                       \
+    (MoveDependencies)                                        \
+    {                                                         \
+        .lidar = &lidar,                                      \
+        .positionPIDs = {&pid_x_pos, &pid_y_pos, &pid_z_pos}, \
+        .velocityPIDs = { &pid_x_vel,                         \
+                          &pid_y_vel,                         \
+                          &pid_z_vel }                        \
+    }
+
+extern Move move;
 
 #endif
 

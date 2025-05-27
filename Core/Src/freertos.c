@@ -68,13 +68,6 @@ const osThreadAttr_t StabilizeTask_attributes = {
   .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for GroundStationTa */
-osThreadId_t GroundStationTaHandle;
-const osThreadAttr_t GroundStationTa_attributes = {
-  .name = "GroundStationTa",
-  .stack_size = 256 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 /* Definitions for CommuCheckTask */
 osThreadId_t CommuCheckTaskHandle;
 const osThreadAttr_t CommuCheckTask_attributes = {
@@ -89,6 +82,13 @@ const osThreadAttr_t NrfResponseTask_attributes = {
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for MoveTask */
+osThreadId_t MoveTaskHandle;
+const osThreadAttr_t MoveTask_attributes = {
+  .name = "MoveTask",
+  .stack_size = 512 * 4,
+  .priority = (osPriority_t) osPriorityNormal6,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -98,9 +98,9 @@ const osThreadAttr_t NrfResponseTask_attributes = {
 void StartDefaultTask(void *argument);
 void StartAttitudeIMUTask(void *argument);
 void StartStabilizeTask(void *argument);
-void StartGroundStationTask(void *argument);
 void StartCommuCheckTask(void *argument);
 void StartNrfResponseTask(void *argument);
+void StartMoveTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -140,14 +140,14 @@ void MX_FREERTOS_Init(void) {
   /* creation of StabilizeTask */
   StabilizeTaskHandle = osThreadNew(StartStabilizeTask, NULL, &StabilizeTask_attributes);
 
-  /* creation of GroundStationTa */
-  GroundStationTaHandle = osThreadNew(StartGroundStationTask, NULL, &GroundStationTa_attributes);
-
   /* creation of CommuCheckTask */
   CommuCheckTaskHandle = osThreadNew(StartCommuCheckTask, NULL, &CommuCheckTask_attributes);
 
   /* creation of NrfResponseTask */
   NrfResponseTaskHandle = osThreadNew(StartNrfResponseTask, NULL, &NrfResponseTask_attributes);
+
+  /* creation of MoveTask */
+  MoveTaskHandle = osThreadNew(StartMoveTask, NULL, &MoveTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -213,24 +213,6 @@ __weak void StartStabilizeTask(void *argument)
   /* USER CODE END StartStabilizeTask */
 }
 
-/* USER CODE BEGIN Header_StartGroundStationTask */
-/**
-* @brief Function implementing the GroundStationTa thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartGroundStationTask */
-__weak void StartGroundStationTask(void *argument)
-{
-  /* USER CODE BEGIN StartGroundStationTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartGroundStationTask */
-}
-
 /* USER CODE BEGIN Header_StartCommuCheckTask */
 /**
 * @brief Function implementing the CommuCheckTask thread.
@@ -265,6 +247,24 @@ __weak void StartNrfResponseTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartNrfResponseTask */
+}
+
+/* USER CODE BEGIN Header_StartMoveTask */
+/**
+* @brief Function implementing the MoveTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartMoveTask */
+__weak void StartMoveTask(void *argument)
+{
+  /* USER CODE BEGIN StartMoveTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartMoveTask */
 }
 
 /* Private application code --------------------------------------------------*/

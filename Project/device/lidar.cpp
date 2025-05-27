@@ -16,7 +16,9 @@ Lidar::Lidar(UART_HandleTypeDef* huart)
       last_pose_timestamp_(0),
       velocity_initialized_(false),
       filter_index_(0),
-      filter_count_(0) {
+      filter_count_(0),
+      pose_rx_callback_(nullptr),
+      imu_rx_callback_(nullptr) {
     memset(&pose_data_, 0, sizeof(LidarPoseData));
     memset(&velocity_data_, 0, sizeof(LidarVelocityData));
     memset(&imu_data_, 0, sizeof(LidarImuData));
@@ -84,6 +86,32 @@ LidarImuData Lidar::getImuData() const {
 // 获取雷达速度数据
 LidarVelocityData Lidar::getVelocityData() const {
     return velocity_data_;
+}
+
+// 设置位姿数据接收回调函数
+void Lidar::setPoseRxCallback(lidar_pose_rx_callback_t callback) {
+    pose_rx_callback_ = callback;
+}
+
+// 设置IMU数据接收回调函数
+void Lidar::setImuRxCallback(lidar_imu_rx_callback_t callback) {
+    imu_rx_callback_ = callback;
+}
+
+// 外部接口：设置数据有效性
+void Lidar::setDataValid(bool pose_valid, bool imu_valid) {
+    pose_data_.valid = pose_valid;
+    imu_data_.valid = imu_valid;
+}
+
+// 外部接口：检查位姿数据有效性
+bool Lidar::isPoseDataValid() const {
+    return pose_data_.valid;
+}
+
+// 外部接口：检查IMU数据有效性
+bool Lidar::isImuDataValid() const {
+    return imu_data_.valid;
 }
 
 // 重新启动单字节中断接收
@@ -241,14 +269,17 @@ bool Lidar::parsePosePacket() {
 
     // 保存上一次位置和时间戳
     last_pose_ = pose_data_;
-    last_pose_timestamp_ = current_timestamp;
-
-    // 更新当前位置数据
+    last_pose_timestamp_ = current_timestamp;    // 更新当前位置数据
     pose_data_ = new_pose;
     pose_packet_count_++;
 
     if (!velocity_initialized_) {
         velocity_initialized_ = true;
+    }
+
+    // 调用位姿数据接收回调函数
+    if (pose_rx_callback_) {
+        pose_rx_callback_(&pose_data_);
     }
 
     return true;
@@ -287,6 +318,12 @@ bool Lidar::parseImuPacket() {
     imu_data_.valid = true;
     
     imu_packet_count_++;
+
+    // 调用IMU数据接收回调函数
+    if (imu_rx_callback_) {
+        imu_rx_callback_(&imu_data_);
+    }
+
     return true;
 }
 

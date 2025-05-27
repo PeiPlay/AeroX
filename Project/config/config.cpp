@@ -2,6 +2,7 @@
 #include "cmsis_os.h"
 #include "main.h"
 #include "usart.h"
+#include "move.h"
 
 
 // Attitude
@@ -36,3 +37,13 @@ PidController pid_yaw_spd(CONFIG_PID_YAW_SPD_SET);
 Chassis chassis(CONFIG_CHASSIS_SET);
 
 Lidar lidar(&huart1);
+
+PidController pid_x_vel(CONFIG_PID_X_VEL_SET);
+PidController pid_y_vel(CONFIG_PID_Y_VEL_SET);
+PidController pid_z_vel(CONFIG_PID_Z_VEL_SET);
+
+PidController pid_x_pos(CONFIG_PID_X_POS_SET);
+PidController pid_y_pos(CONFIG_PID_Y_POS_SET);
+PidController pid_z_pos(CONFIG_PID_Z_POS_SET);
+
+Move move(CONFIG_MOVE_SET);

@@ -1,9 +1,13 @@
 #ifndef LIDAR_H
 #define LIDAR_H
 
-#include "main.h"
 #include <stdint.h>
+#include "main.h"
 #include "time_timestamp.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 // 滤波器配置
 #define LIDAR_VELOCITY_FILTER_SIZE 3  // 滑动均值滤波器大小，可修改
@@ -45,6 +49,16 @@ struct LidarImuData {
     bool valid;    // 数据有效性标志
 };
 
+// Lidar数据接收回调函数类型定义
+typedef void (*lidar_pose_rx_callback_t)(const struct LidarPoseData* pose_data);
+typedef void (*lidar_imu_rx_callback_t)(const struct LidarImuData* imu_data);
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
+
 class Lidar {
 public:
     Lidar(UART_HandleTypeDef* huart);
@@ -59,6 +73,15 @@ public:
     LidarImuData getImuData() const;
 
     bool isRunning() const { return running_; }
+
+    // 设置外部回调函数
+    void setPoseRxCallback(lidar_pose_rx_callback_t callback);
+    void setImuRxCallback(lidar_imu_rx_callback_t callback);
+    
+    // 外部接口：用于通信检查任务
+    void setDataValid(bool pose_valid, bool imu_valid);
+    bool isPoseDataValid() const;
+    bool isImuDataValid() const;
 
     // 在HAL_UART_RxCpltCallback或UART IDLE中断处理函数中调用
     void rxCallback(UART_HandleTypeDef *huart, uint8_t* pData, uint16_t Size);
@@ -79,16 +102,19 @@ private:
     timestamp_t last_pose_timestamp_;
     bool velocity_initialized_;
 
-    // 滑动均值滤波器
+    // 滑动均值滤波器    
     float vx_filter_buffer_[LIDAR_VELOCITY_FILTER_SIZE];
     float vy_filter_buffer_[LIDAR_VELOCITY_FILTER_SIZE];
     float vz_filter_buffer_[LIDAR_VELOCITY_FILTER_SIZE];
     uint8_t filter_index_;
     uint8_t filter_count_;
-
     uint32_t pose_packet_count_;
     uint32_t imu_packet_count_;
     uint32_t error_count_;
+
+    // 回调函数指针
+    lidar_pose_rx_callback_t pose_rx_callback_;
+    lidar_imu_rx_callback_t imu_rx_callback_;
 
     enum ParseState {
         STATE_WAIT_HEADER1,
@@ -118,5 +144,6 @@ private:
     // 辅助函数：从字节数组转换到float
     static float bytesToFloat(const uint8_t* bytes);
 };
+#endif //
 
 #endif // LIDAR_H

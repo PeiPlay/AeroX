@@ -65,6 +65,12 @@ public:
         float currentVy_ground = 0.0f;          // 当前Y速度 (m/s) - 地面坐标系
         float currentVz_ground = 0.0f;          // 当前Z速度 (m/s) - 地面坐标系
         
+        // 偏移量 - 原点设定
+        float offsetX = 0.0f;                   // X方向偏移量 (m)
+        float offsetY = 0.0f;                   // Y方向偏移量 (m)
+        float offsetZ = 0.0f;                   // Z方向偏移量 (m)
+        float offsetYaw = 0.0f;                 // 偏航角偏移量 (rad)
+        
         // 机身坐标系下的相对位置误差和速度 (用于控制)
         float errorX_body = 0.0f;               // X方向位置误差 (m) - 机身坐标系
         float errorY_body = 0.0f;               // Y方向位置误差 (m) - 机身坐标系
@@ -85,9 +91,6 @@ public:
         float throttleCmd = 0.0f;        // 速度环输出的油门指令 (相对值)
 
         // 数据有效性
-        bool positionValid = false;      // 位置数据有效性
-        bool velocityValid = false;      // 速度数据有效性
-        bool imuValid = false;           // IMU数据有效性
         bool isInitialized = false;      // 初始化标志
     };
 
@@ -174,6 +177,30 @@ public:
      */
     virtual const Status& getStatus() const { return status_; }
 
+    /**
+     * @brief 设置坐标偏移量
+     * @param offset_x X方向偏移量 (m)
+     * @param offset_y Y方向偏移量 (m)
+     * @param offset_z Z方向偏移量 (m)
+     * @param offset_yaw 偏航角偏移量 (rad)
+     */
+    virtual void setOffset(float offset_x, float offset_y, float offset_z, float offset_yaw);
+
+    /**
+     * @brief 获取当前偏移量
+     * @param offset_x 输出X方向偏移量 (m)
+     * @param offset_y 输出Y方向偏移量 (m)
+     * @param offset_z 输出Z方向偏移量 (m)
+     * @param offset_yaw 输出偏航角偏移量 (rad)
+     */
+    virtual void getOffset(float& offset_x, float& offset_y, float& offset_z, float& offset_yaw) const;
+
+    /**
+     * @brief 将当前位置设为原点（0,0,0,0）
+     * @details 将当前传感器读数设为偏移量，使计算后的坐标为(0,0,0,0)
+     */
+    virtual void setCurrentAsOrigin();
+
 protected:
     Config config_;   // 存储配置参数
     Target target_;   // 存储目标值
@@ -207,6 +234,13 @@ protected:
      * @brief 计算并更新位置误差的坐标系转换
      */
     virtual void updatePositionErrorTransform();
+
+    /**
+     * @brief 角度归一化到 [-π, π] 范围
+     * @param angle 输入角度 (rad)
+     * @return 归一化后的角度 (rad)
+     */
+    virtual float normalizeAngle(float angle);
 };
 
 #endif // MOVE_H

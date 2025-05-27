@@ -131,6 +131,10 @@ public:
     virtual float getTargetPitch(void);
     virtual float getTargetYaw(void);
 
+    virtual float getCurrentRoll(void);
+    virtual float getCurrentPitch(void);
+    virtual float getCurrentYaw(void);
+
     /**
      * @brief 设置直接控制油门值
      * @param throttle 油门值 (0.0 to 100.0)

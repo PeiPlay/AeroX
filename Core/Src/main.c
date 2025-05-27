@@ -99,6 +99,12 @@ int main(void)
   PeriphCommonClock_Config();
 
   /* USER CODE BEGIN SysInit */
+//	if (__HAL_RCC_GET_FLAG(RCC_FLAG_BORRST) != RESET)
+//  {
+//	  __HAL_RCC_CLEAR_RESET_FLAGS();
+//	  HAL_Delay(200);
+//	  HAL_NVIC_SystemReset();
+//  }
 
   /* USER CODE END SysInit */
 

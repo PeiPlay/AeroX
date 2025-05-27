@@ -220,3 +220,16 @@ float Chassis::getTargetYaw(void)
 {
     return target_.yaw;
 }
+
+float Chassis::getCurrentRoll(void)
+{
+    return status_.chassisRoll;
+}
+float Chassis::getCurrentPitch(void)
+{
+    return status_.chassisPitch;
+}
+float Chassis::getCurrentYaw(void)
+{
+    return status_.chassisYaw;
+}
