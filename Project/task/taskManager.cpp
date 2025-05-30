@@ -18,17 +18,21 @@ void taskCommuCheck_Init(void* argument)
 {
     nrf.init();
     ground_station_status.is_connected = 0; // 初始状态为未连接
-    ground_station_status.last_rx_timestamp = 0;
-    ground_station_status.recovery.first_packet_ts = 0;
-    ground_station_status.recovery.last_packet_ts = 0;
+    ground_station_status.rx_flag = 0; // 初始化接收标志位
+    ground_station_status.recovery.time_since_last_packet_ms = 0;
     ground_station_status.recovery.consecutive_packets = 0;
     
     // 初始化Lidar状态
     lidar_status.is_connected = 0; // 初始状态为未连接
-    lidar_status.last_pose_timestamp = 0;
-    lidar_status.last_imu_timestamp = 0;
-    lidar_status.recovery.first_packet_ts = 0;
-    lidar_status.recovery.last_packet_ts = 0;
+    lidar_status.pose_rx_flag = 0; // 初始化位姿接收标志位
+    lidar_status.imu_rx_flag = 0;  // 初始化IMU接收标志位
+    lidar_status.pose_count = 0;
+    lidar_status.imu_count = 0;
+    lidar_status.pose_rate = 0.0f;
+    lidar_status.imu_rate = 0.0f;
+    lidar_status.pose_time_since_last_ms = 0;
+    lidar_status.imu_time_since_last_ms = 0;
+    lidar_status.recovery.time_since_last_packet_ms = 0;
     lidar_status.recovery.consecutive_packets = 0;
     
     // 设置激光雷达回调函数

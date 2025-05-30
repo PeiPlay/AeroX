@@ -1,4 +1,5 @@
 #include "move.h"
+#include "chassis.h"  // 添加chassis头文件
 #include <math.h>
 #include <algorithm>
 #include <cstring>
@@ -14,6 +15,7 @@ Move::Move(const MoveDependencies& deps) :
 {
     // 从外部依赖项拷贝指针到内部 config_ 结构体
     config_.lidar = deps.lidar;
+    config_.chassis = deps.chassis;  // 添加chassis指针赋值
     memcpy(config_.positionPIDs, deps.positionPIDs, sizeof(config_.positionPIDs));
     memcpy(config_.velocityPIDs, deps.velocityPIDs, sizeof(config_.velocityPIDs));
 }
@@ -23,6 +25,10 @@ bool Move::init() {
 
     if (!config_.lidar) {
         return false; // 雷达是必需的
+    }
+
+    if (!config_.chassis) {
+        return false; // 底盘是必需的，用于获取当前偏航角
     }
 
     for (int i = 0; i < 3; ++i) {
@@ -138,15 +144,15 @@ void Move::update() {
     }
 
     // 4. 内环PID (速度环) -> 姿态指令 (使用机身坐标系速度)
-    // X速度控制 -> 俯仰角指令 (机体坐标系中，X正方向对应机头前进)
+    // X速度控制 -> 横滚角指令 (机体坐标系中，X正方向对应机体前方)
     if (config_.velocityPIDs[PID_X_VELOCITY]) {
-        status_.pitchCmd = config_.velocityPIDs[PID_X_VELOCITY]->update(
+        status_.rollCmd = config_.velocityPIDs[PID_X_VELOCITY]->update(
             status_.targetVxCmd, status_.currentVx_body);
     }
 
-    // Y速度控制 -> 横滚角指令 (机体坐标系中，Y正方向对应机体右侧)
+    // Y速度控制 -> 俯仰角指令 (机体坐标系中，Y正方向对应机体右侧)
     if (config_.velocityPIDs[PID_Y_VELOCITY]) {
-        status_.rollCmd = config_.velocityPIDs[PID_Y_VELOCITY]->update(
+        status_.pitchCmd = config_.velocityPIDs[PID_Y_VELOCITY]->update(
             status_.targetVyCmd, status_.currentVy_body);
     }
 
@@ -197,25 +203,25 @@ void Move::getOffset(float& offset_x, float& offset_y, float& offset_z, float& o
 }
 
 void Move::setCurrentAsOrigin() {
-    if (!config_.lidar) {
+    if (!config_.lidar || !config_.chassis) {
         return;
     }
 
     // 获取当前传感器原始数据
     LidarPoseData pose_data = config_.lidar->getPoseData();
-    LidarImuData imu_data = config_.lidar->getImuData();
     
-    if (pose_data.valid && imu_data.valid) {
+    if (pose_data.valid) {
         // 将当前传感器读数设为偏移量
         status_.offsetX = pose_data.x;
         status_.offsetY = pose_data.y;
         status_.offsetZ = pose_data.z;
-        status_.offsetYaw = normalizeAngle(imu_data.yaw);
+        // 使用chassis的当前偏航角设置偏移量
+        status_.offsetYaw = normalizeAngle(config_.chassis->getCurrentYaw());
     }
 }
 
 void Move::updateSensorData() {
-    if (!config_.lidar) {
+    if (!config_.lidar || !config_.chassis) {
         return;
     }
 
@@ -236,12 +242,9 @@ void Move::updateSensorData() {
         status_.currentVz_ground = velocity_data.vz_filtered;
     }
 
-    // 获取IMU数据 (偏航角) - 应用偏移量
-    LidarImuData imu_data = config_.lidar->getImuData();
-    if (imu_data.valid) {
-        // 应用偏移量并归一化：计算角度 = 原始角度 - 偏移角度
-        status_.currentYaw = normalizeAngle(imu_data.yaw - status_.offsetYaw);
-    }
+    // 使用chassis的当前偏航角而不是雷达的偏航角
+    // 应用偏移量并归一化：计算角度 = 原始角度 - 偏移角度
+    status_.currentYaw = normalizeAngle(config_.chassis->getCurrentYaw() - status_.offsetYaw);
 
     // 转换当前速度到机身坐标系
     transformGroundToBody(status_.currentVx_ground, status_.currentVy_ground, status_.currentVz_ground,
@@ -253,20 +256,21 @@ void Move::transformGroundToBody(float x_ground, float y_ground, float z_ground,
                                float yaw, 
                                float& x_body, float& y_body, float& z_body) {
     // 坐标系转换：从地面坐标系到机身坐标系
-    // 地面坐标系：X-北，Y-东，Z-上
-    // 机身坐标系：X-前，Y-右，Z-下
+    // 参考odometer模块的坐标变换公式
+    // 地面坐标系：全局坐标系
+    // 机身坐标系：局部坐标系 (Y轴指向前方，X轴指向右侧)
     
     float cos_yaw = cosf(yaw);
     float sin_yaw = sinf(yaw);
     
-    // 旋转变换矩阵 (绕Z轴旋转-yaw角)
-    // [x_body]   [cos_yaw  sin_yaw  0] [x_ground]
-    // [y_body] = [-sin_yaw cos_yaw  0] [y_ground]
-    // [z_body]   [0        0        1] [z_ground]
+    // 使用与odometer相同的变换公式 (逆变换：从全局到局部)
+    // 局部坐标 = 全局坐标在局部坐标系下的投影
+    // x_body = x_ground * cos_yaw + y_ground * sin_yaw
+    // y_body = -x_ground * sin_yaw + y_ground * cos_yaw
     
-    x_body = cos_yaw * x_ground + sin_yaw * y_ground;
-    y_body = -sin_yaw * x_ground + cos_yaw * y_ground;
-    z_body = z_ground; // Z轴方向保持不变 (都是向上)
+    x_body = x_ground * cos_yaw - y_ground * sin_yaw;
+    y_body = x_ground * sin_yaw + y_ground * cos_yaw;
+    z_body = z_ground; // Z轴方向保持不变
 }
 
 void Move::updatePositionErrorTransform() {

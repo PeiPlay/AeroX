@@ -182,8 +182,8 @@ extern Chassis chassis;
 #define CONFIG_PID_Z_VEL_SET                                        \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 11.0f, .ki = 0.0f, .kd = 2.0f,                         \
+        .maxOutput = 40.0f*0.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -213,8 +213,8 @@ extern PidController pid_z_vel;
 #define CONFIG_PID_Z_POS_SET                                        \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,                         \
-        .maxOutput = 0.0f, .maxIntegral = 0.0f,                     \
+        .kp = 2.0f, .ki = 0.0f, .kd = 0.5f,                         \
+        .maxOutput = 1.5f*0.0f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -227,6 +227,7 @@ extern PidController pid_z_pos;
     (MoveDependencies)                                        \
     {                                                         \
         .lidar = &lidar,                                      \
+        .chassis = &chassis,                                  \
         .positionPIDs = {&pid_x_pos, &pid_y_pos, &pid_z_pos}, \
         .velocityPIDs = { &pid_x_vel,                         \
                           &pid_y_vel,                         \

@@ -248,7 +248,17 @@
         <Ww>
           <count>18</count>
           <WinNumber>1</WinNumber>
-          <ItemText>lidar_status</ItemText>
+          <ItemText>lidar_status,0x0A</ItemText>
+        </Ww>
+        <Ww>
+          <count>19</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>override_throttle</ItemText>
+        </Ww>
+        <Ww>
+          <count>20</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>override_smoother</ItemText>
         </Ww>
       </WatchWindow1>
       <WatchWindow2>
@@ -311,6 +321,16 @@
           <count>11</count>
           <WinNumber>2</WinNumber>
           <ItemText>ground_station_status</ItemText>
+        </Ww>
+        <Ww>
+          <count>12</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>move</ItemText>
+        </Ww>
+        <Ww>
+          <count>13</count>
+          <WinNumber>2</WinNumber>
+          <ItemText>\\AeroX_test\../Project/task/taskStabilize.cpp\override_throttle</ItemText>
         </Ww>
       </WatchWindow2>
       <Tracepoint>

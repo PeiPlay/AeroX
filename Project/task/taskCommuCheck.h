@@ -1,7 +1,6 @@
 #ifndef TASK_COMMU_CHECK_H
 #define TASK_COMMU_CHECK_H
 #include "main.h"
-#include "time_utils.h"
 #include "cmsis_os.h"
 
 // 前向声明
@@ -11,9 +10,8 @@ struct LidarImuData;
 // ========== 连接恢复状态结构 ==========
 typedef struct __attribute__((packed))
 {
-    timestamp_t first_packet_ts;    // 当前恢复序列中第一个数据包的时间戳
-    timestamp_t last_packet_ts;     // 当前恢复序列中最近一个数据包的时间戳
-    uint8_t consecutive_packets;    // 满足条件的连续数据包数量
+    uint64_t time_since_last_packet_ms;  // 自最后一包到现在的累计时间(毫秒)
+    uint8_t consecutive_packets;         // 满足条件的连续数据包数量
 } connection_recovery_state_t;
 
 // ========== NRF地面站手柄数据结构 ==========
@@ -46,7 +44,7 @@ typedef struct __attribute__((packed))
 typedef struct __attribute__((packed))
 {
     uint8_t is_connected;           // 连接状态: 0 = 未连接, 1 = 已连接
-    timestamp_t last_rx_timestamp;  // 最新接收到数据包的时间戳
+    uint8_t rx_flag;               // 接收标志位: 1 = 本轮询周期内收到数据, 0 = 未收到
     connection_recovery_state_t recovery; // 恢复状态
 } ground_station_status_t;
 
@@ -54,8 +52,17 @@ typedef struct __attribute__((packed))
 typedef struct __attribute__((packed))
 {
     uint8_t is_connected;               // 连接状态: 0 = 未连接, 1 = 已连接
-    timestamp_t last_pose_timestamp;    // 最新接收到位姿数据包的时间戳
-    timestamp_t last_imu_timestamp;     // 最新接收到IMU数据包的时间戳
+    uint8_t pose_rx_flag;              // 位姿数据接收标志位
+    uint8_t imu_rx_flag;               // IMU数据接收标志位
+
+    uint64_t pose_count;          // 位姿数据包计数
+    uint64_t imu_count;           // IMU数据包计数
+
+    float pose_rate;          // 位姿数据包接收率 (Hz)
+    float imu_rate;           // IMU数据包接收率 (Hz)
+
+    uint64_t pose_time_since_last_ms;   // 自最后一个位姿包到现在的累计时间(毫秒)
+    uint64_t imu_time_since_last_ms;    // 自最后一个IMU包到现在的累计时间(毫秒)
     connection_recovery_state_t recovery; // 恢复状态
 } lidar_status_t;
 

@@ -3,14 +3,17 @@
 
 #include <stdint.h>
 #include "main.h"
-#include "time_timestamp.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // 滤波器配置
-#define LIDAR_VELOCITY_FILTER_SIZE 3  // 滑动均值滤波器大小，可修改
+#define LIDAR_POSITION_FILTER_SIZE 10  // 位置滑动均值滤波器大小，可修改
+#define LIDAR_VELOCITY_LOWPASS_ALPHA 0.4f  // 速度一阶低通滤波器系数初始值 (0-1, 越小滤波越强)
+
+// DMA接收配置
+#define LIDAR_DMA_BUFFER_SIZE 32      // DMA接收缓冲区大小
 
 // Lidar通信协议常量
 #define LIDAR_HEADER1         0x3F // '?'
@@ -32,9 +35,6 @@ struct LidarPoseData {
 
 // 雷达速度数据结构
 struct LidarVelocityData {
-    float vx_raw;      // X方向原始速度 (m/s) (地面坐标系)
-    float vy_raw;      // Y方向原始速度 (m/s) (地面坐标系)
-    float vz_raw;      // Z方向原始速度 (m/s) (地面坐标系)
     float vx_filtered; // X方向滤波后速度 (m/s) (地面坐标系)
     float vy_filtered; // Y方向滤波后速度 (m/s) (地面坐标系)
     float vz_filtered; // Z方向滤波后速度 (m/s) (地面坐标系)
@@ -61,12 +61,18 @@ typedef void (*lidar_imu_rx_callback_t)(const struct LidarImuData* imu_data);
 
 class Lidar {
 public:
-    Lidar(UART_HandleTypeDef* huart);
+    Lidar(UART_HandleTypeDef* huart, float pose_frequency_hz = 50.0f);
     ~Lidar();
 
     bool init();
     bool start();
     void stop();
+
+    // 设置位姿数据频率 (需要在start()之前调用)
+    void setPoseFrequency(float frequency_hz);
+    
+    // 获取当前设置的频率
+    float getPoseFrequency() const { return pose_frequency_hz_; }
 
     LidarPoseData getPoseData() const;
     LidarVelocityData getVelocityData() const;
@@ -83,15 +89,24 @@ public:
     bool isPoseDataValid() const;
     bool isImuDataValid() const;
 
-    // 在HAL_UART_RxCpltCallback或UART IDLE中断处理函数中调用
-    void rxCallback(UART_HandleTypeDef *huart, uint8_t* pData, uint16_t Size);
-    void byteRxCallback(UART_HandleTypeDef* huart);
+    // 设置速度低通滤波器系数 (0-1, 越小滤波越强)
+    void setVelocityLowpassAlpha(float alpha);
+    
+    // 获取当前速度低通滤波器系数
+    float getVelocityLowpassAlpha() const { return velocity_lowpass_alpha_; }
+
+    // DMA接收完成回调
+    void dmaRxCallback(UART_HandleTypeDef *huart);
 
 private:
     UART_HandleTypeDef* huart_;
     volatile bool running_;
 
-    uint8_t rx_byte_; // 单字节接收时的缓冲区
+    // 位姿数据频率配置 (Hz)
+    float pose_frequency_hz_;
+
+    // DMA接收缓冲区
+    uint8_t dma_rx_buffer_[LIDAR_DMA_BUFFER_SIZE];
 
     LidarPoseData pose_data_;
     LidarVelocityData velocity_data_;
@@ -99,13 +114,19 @@ private:
 
     // 速度计算相关
     LidarPoseData last_pose_;
-    timestamp_t last_pose_timestamp_;
     bool velocity_initialized_;
 
-    // 滑动均值滤波器    
-    float vx_filter_buffer_[LIDAR_VELOCITY_FILTER_SIZE];
-    float vy_filter_buffer_[LIDAR_VELOCITY_FILTER_SIZE];
-    float vz_filter_buffer_[LIDAR_VELOCITY_FILTER_SIZE];
+    // 一阶低通滤波器 - 用于速度滤波
+    float velocity_lowpass_alpha_;  // 低通滤波器系数
+    float vx_lowpass_prev_;
+    float vy_lowpass_prev_;
+    float vz_lowpass_prev_;
+    bool velocity_lowpass_initialized_;
+
+    // 滑动均值滤波器 - 用于位置滤波    
+    float x_filter_buffer_[LIDAR_POSITION_FILTER_SIZE];
+    float y_filter_buffer_[LIDAR_POSITION_FILTER_SIZE];
+    float z_filter_buffer_[LIDAR_POSITION_FILTER_SIZE];
     uint8_t filter_index_;
     uint8_t filter_count_;
     uint32_t pose_packet_count_;
@@ -133,13 +154,16 @@ private:
     bool parsePosePacket();
     bool parseImuPacket();
     
-    bool startRxInterrupt();
+    // DMA相关函数
+    bool startDmaReceive();
+    uint16_t getNextReceiveLength() const;
     void processReceivedData(uint8_t* pData, uint16_t Size);
 
     // 速度计算和滤波
     void calculateVelocity();
-    void updateVelocityFilter(float vx, float vy, float vz);
-    float getFilteredVelocity(const float* buffer) const;
+    void updatePositionFilter(float x, float y, float z);
+    float getFilteredPosition(const float* buffer) const;
+    float applyLowpassFilter(float current_value, float previous_filtered, float alpha) const;
 
     // 辅助函数：从字节数组转换到float
     static float bytesToFloat(const uint8_t* bytes);

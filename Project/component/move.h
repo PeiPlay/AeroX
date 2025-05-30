@@ -5,6 +5,9 @@
 #include "pid.h"
 #include <stdint.h>
 
+// 前向声明
+class Chassis;
+
 // 定义PID索引
 #define PID_X_POSITION  0
 #define PID_Y_POSITION  1
@@ -19,6 +22,7 @@
  */
 struct MoveDependencies {
     Lidar* lidar = nullptr;
+    Chassis* chassis = nullptr;  // 添加chassis指针用于获取当前偏航角
     PidController* positionPIDs[3] = {nullptr, nullptr, nullptr}; // X, Y, Z Position (外环)
     PidController* velocityPIDs[3] = {nullptr, nullptr, nullptr}; // X, Y, Z Velocity (内环)
 };
@@ -34,6 +38,7 @@ public:
      */
     struct Config {
         Lidar* lidar = nullptr;
+        Chassis* chassis = nullptr;  // 添加chassis指针
         PidController* positionPIDs[3] = {nullptr, nullptr, nullptr}; // 外环: X, Y, Z Position
         PidController* velocityPIDs[3] = {nullptr, nullptr, nullptr}; // 内环: X, Y, Z Velocity
     };
@@ -218,6 +223,11 @@ protected:
 
     /**
      * @brief 坐标系转换：从地面坐标系到机身坐标系
+     * @details 使用与odometer模块相同的坐标变换公式
+     * 坐标系约定：
+     * - 机身坐标系：Y轴指向车头（前方），X轴指向车体右侧
+     * - 地面坐标系：全局坐标系
+     * - 变换公式与odometer模块保持一致
      * @param x_ground 地面坐标系X
      * @param y_ground 地面坐标系Y  
      * @param z_ground 地面坐标系Z

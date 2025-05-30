@@ -3,12 +3,10 @@
 #include "config.h"
 #include "slope_smoother.h"
 #include "utils.h"
+#include "cmsis_os.h"
 
 float motor_all_th = 0.0;
 SlopeSmoother motor_smoother(0.04f, 100.0f, motor_all_th);
-
-float gs_target_th = 0.0f;
-float gs_target_yaw = 0.0f;
 
 void taskStabilize_Init_Motor(void)
 {
@@ -16,7 +14,7 @@ void taskStabilize_Init_Motor(void)
     motor_2.init();
     motor_3.init();
     motor_4.init();
-    osDelay(200);
+    osDelay(2000);
 }
 
 void taskStabilize_Init(void)
@@ -25,6 +23,123 @@ void taskStabilize_Init(void)
     chassis.init();
 }
 
+float override_throttle = 0.0f; // 油门覆盖值
+SlopeSmoother override_smoother(0.04f, 100.0f, override_throttle);
+
+void taskStabilize_Manual(void)
+{
+//手动控制模式
+    float temp = ((GS_ROCKERS.left_y > 0.0f) ? (GS_ROCKERS.left_y / 3.0f) : 0.0f) + 30.0f;
+    float gs_target_th = temp > 100.0f ? 100.0f : temp;
+
+    // 读取手柄输入，设置目标姿态和油门
+    float roll = GS_ROCKERS.right_x / 128.0f * 0.01745f * 7; // 转换为弧度
+    float pitch = GS_ROCKERS.right_y / 128.0f * 0.01745f * 7; // 转换为弧度
+    float yaw = math_normalize_radian_pi((-0.00002f * GS_ROCKERS.left_x) + chassis.getTargetYaw());
+
+    chassis.setTargetAttitude(roll, pitch, yaw);
+    chassis.setThrottleOverride(motor_smoother.update(gs_target_th));
+}
+
+void taskStabilize_Stop(void)
+{
+    // 停机模式
+    // 设置油门为0，保持当前姿态
+    chassis.setThrottleOverride(motor_smoother.update(0.0f));
+    chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
+}
+
+void taskStabilize_Auto(void)
+{
+    static uint64_t last_ctrl_ms = 0;
+    static const uint64_t ctrl_interval_ms = 60; // 控制间隔60ms
+
+    uint64_t current_ms = xTaskGetTickCount();
+
+    if(current_ms - last_ctrl_ms < ctrl_interval_ms)
+    {
+        // 如果距离上次控制时间小于控制间隔，则直接返回
+        return;
+    }
+    // 更新上次控制时间
+    last_ctrl_ms = current_ms;
+    move.setTargetPosition(0, 0, 1.0f); // 这里可以根据需要设置目标位置
+    move.update();
+
+    float rollCmd, pitchCmd, throttleCmd;
+    move.getAttitudeCommand(rollCmd, pitchCmd, throttleCmd);
+    chassis.setTargetAttitude(
+        rollCmd,
+        pitchCmd,
+        chassis.getTargetYaw()
+    );
+
+    chassis.setThrottleOverride(
+        motor_smoother.update(throttleCmd + override_smoother.update(override_throttle))
+    );
+}
+
+void taskStabilize_Emergency(void)
+{
+    // 紧急状态
+    // 设置油门为缓降值，保持当前姿态
+    chassis.setThrottleOverride(motor_smoother.update(35.0f));
+    chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
+}
+
+void taskStabilize_Update(void)
+{
+    chassis.update();
+    osDelay(2);
+}
+
+
+void taskStabilize_Control(void)
+{
+    // 读取手柄是否链接
+    bool gs_is_connected = GS_IS_CONNECTED;
+
+    // 读取雷达是否链接
+    bool lidar_is_connected = LIDAR_IS_CONNECTED;
+
+    // 是否启动自稳
+    bool activate_stabilize = GS_SWITCH(0); 
+
+    // 是否启动自动控制
+    bool activate_auto = activate_stabilize && (GS_SWITCH(1));
+
+    // 若手柄未链接，则进入紧急状态
+    if(!gs_is_connected)
+    {
+        // 进入紧急状态
+        taskStabilize_Emergency();
+        return;
+    }
+    //手柄链接状态，但未启动自稳，说明是停机模式
+    if(!activate_stabilize)
+    {
+        // 进入停机状态
+        taskStabilize_Stop();
+        return;
+    }
+    // 手柄链接状态，且启动了自稳，但未启动自动控制，说明是手动控制模式
+    if(!activate_auto)
+    {
+        // 进入手动控制状态
+        taskStabilize_Manual();
+        return;
+    }
+    // 手柄链接状态，且启动了自稳，且启动了自动控制，说明是自动控制模式
+    // 但雷达掉线，说明是紧急控制模式
+    if(!lidar_is_connected)
+    {
+        // 进入紧急控制状态
+        taskStabilize_Emergency();
+        return;
+    }
+    // 手柄链接状态，且启动了自稳，且启动了自动控制，且雷达正常链接，说明是自动控制模式
+    taskStabilize_Auto();
+}
 
 void taskStabilize(void *argument)
 {
@@ -33,73 +148,10 @@ void taskStabilize(void *argument)
     taskStabilize_Init();
     osDelay(1000);
     chassis.setThrottleMode(ThrottleMode::DIRECT);
+
     while (1)
     {
-        if(GS_IS_CONNECTED != gs_is_connected_prev)
-        {
-            // 连接状态发生变化
-            gs_is_connected_prev = GS_IS_CONNECTED;
-        }
-        
-        if(GS_IS_CONNECTED)
-        {
-            // 遥控器正常链接
-
-            float temp = ((GS_ROCKERS.left_y > 0.0f) ? (GS_ROCKERS.left_y / 3.0f) : 0.0f) + 30.0f;
-            gs_target_th = temp > 100.0f ? 100.0f : temp;
-
-            temp = math_normalize_radian_pi((-0.00002f * GS_ROCKERS.left_x) + chassis.getTargetYaw());
-            
-            if(GS_SWITCH(0) && !GS_SWITCH(1))
-            {
-                // 操作员希望使用遥控器控制
-                // 设置目标姿态和油门
-                chassis.setTargetAttitude(
-					0.01745f*0.4*0.0f + ((-GS_ROCKERS.right_x) / 128.0f) * 0.01745f * 7, 
-					0.01745f*1.94*0.0f + ((-GS_ROCKERS.right_y) / 128.0f) * 0.01745f * 7, temp);
-                chassis.setThrottleOverride(motor_smoother.update(gs_target_th));
-            }
-            else if(!GS_SWITCH(0))
-            {
-                // 操作员希望飞机停止
-                // 设置油门为0
-                chassis.setThrottleOverride(motor_smoother.update(0.0f));
-                chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
-            }
-            else if(GS_SWITCH(1) && !LIDAR_IS_CONNECTED)
-            {
-                // 操作员希望使用雷达控制，但雷达掉线
-                // 设置为缓降油门
-                chassis.setThrottleOverride(motor_smoother.update(35.0f));
-                chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
-            }
-            // 操作员希望使用自动控制，且雷达正常链接
-            // 直接跳转到update函数即可
-        }
-        else
-        {
-            // 遥控器未连接或掉线
-            // 设置为缓降油门
-            chassis.setThrottleOverride(motor_smoother.update(35.0f));
-            chassis.setTargetAttitude(0.0f, 0.0f, chassis.getCurrentYaw());
-        }
-
-        chassis.update();
-		osDelay(2);
+        taskStabilize_Control();
+        taskStabilize_Update();
 	}
-
-//	while(1){
-//         if(motor_all_th > 100.0f) motor_all_th = 100.0f;
-//         if(motor_all_th < 0.0f) motor_all_th = 0.0f;
-//         //chassis.setThrottleOverride(motor_smoother.update(motor_all_th));
-
-//        motor_1.setThrottle(motor_smoother.update(motor_all_th));
-//        motor_2.setThrottle(motor_smoother.update(motor_all_th));
-//        motor_3.setThrottle(motor_smoother.update(motor_all_th));
-//        motor_4.setThrottle(motor_smoother.update(motor_all_th));
-//        // 读取遥控器数据
-//        //chassis.update();
-//        osDelay(2);
-//    }
-
 }
