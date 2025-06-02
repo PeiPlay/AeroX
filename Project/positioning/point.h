@@ -10,8 +10,8 @@ struct Pose {
     float z;      // z坐标
     float yaw;    // 偏航角（弧度）
     
-    Pose() : x(0.0f), y(0.0f), z(0.0f), yaw(0.0f) {}
-    Pose(float x, float y, float z, float yaw) : x(x), y(y), z(z), yaw(yaw) {}
+    // 移除构造函数以支持designated initializer
+    // 默认初始化为零值
 };
 
 // 位姿差值结构体
@@ -31,8 +31,8 @@ struct ToleranceParams {
     float err_yaw;      // 偏航角允许误差（弧度）
     uint32_t threshold; // 稳定性检测阈值
     
-    ToleranceParams() : err_r(0.1f), err_yaw(0.1f), threshold(10) {}
-    ToleranceParams(float r, float yaw, uint32_t th) : err_r(r), err_yaw(yaw), threshold(th) {}
+    // 移除构造函数以支持designated initializer
+    // 默认初始化为零值
 };
 
 // 目标点类
@@ -81,5 +81,6 @@ private:
     // 检查是否在误差范围内
     bool isWithinTolerance(const PoseDiff& diff);
 };
+
 
 #endif // POINT_H

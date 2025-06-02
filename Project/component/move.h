@@ -92,8 +92,20 @@ public:
         float targetVyCmd = 0.0f;        // 位置环输出的目标Y速度 (m/s)
         float targetVzCmd = 0.0f;        // 位置环输出的目标Z速度 (m/s)
         float rollCmd = 0.0f;            // 速度环输出的横滚角度指令 (rad)
+        float rollCmd_now = 0.0f;            // 当前帧的横滚角度指令 (rad)
+        float rollCmd_last = 0.0f;            // 上一帧的横滚角度指令 (rad)
+        float rollCmd_prev = 0.0f;            // 前一帧的横滚角度指令 (rad)
+        float rollCmd_far = 0.0f;            // 前两帧的横滚角度指令 (rad)
         float pitchCmd = 0.0f;           // 速度环输出的俯仰角度指令 (rad)
+        float pitchCmd_now = 0.0f;           // 当前帧的俯仰角度指令 (rad)
+        float pitchCmd_last = 0.0f;           // 上一帧的俯仰角度指令 (rad)
+        float pitchCmd_prev = 0.0f;           // 前一帧的俯仰角度指令 (rad)
+        float pitchCmd_far = 0.0f;           // 前两帧的俯仰角度指令 (rad)
         float throttleCmd = 0.0f;        // 速度环输出的油门指令 (相对值)
+        float throttleCmd_now = 0.0f;        // 当前帧的油门指令 (相对值)
+        float throttleCmd_last = 0.0f;        // 上一帧的油门指令 (相对值)
+        float throttleCmd_prev = 0.0f;        // 前一帧的油门指令 (相对值)
+        float throttleCmd_far = 0.0f;        // 前两帧的油门指令 (相对值)
 
         // 数据有效性
         bool isInitialized = false;      // 初始化标志

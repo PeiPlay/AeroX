@@ -7,6 +7,8 @@
 
 float motor_all_th = 0.0;
 SlopeSmoother motor_smoother(0.04f, 100.0f, motor_all_th);
+extern PoseDiff pose_diff;
+
 
 void taskStabilize_Init_Motor(void)
 {
@@ -14,17 +16,23 @@ void taskStabilize_Init_Motor(void)
     motor_2.init();
     motor_3.init();
     motor_4.init();
-    osDelay(2000);
+    osDelay(300);
+    motor_1.setThrottle(0.0f);
+    motor_2.setThrottle(0.0f);
+    motor_3.setThrottle(0.0f);
+    motor_4.setThrottle(0.0f);
+    osDelay(100);
 }
 
 void taskStabilize_Init(void)
 {
     taskStabilize_Init_Motor();
     chassis.init();
+    chassis.setThrottleMode(ThrottleMode::DIRECT);
 }
 
-float override_throttle = 0.0f; // 油门覆盖值
-SlopeSmoother override_smoother(0.04f, 100.0f, override_throttle);
+float override_throttle = 50.0f; // 油门覆盖值
+SlopeSmoother override_smoother(0.04f, 100.0f, 0.0f);
 
 void taskStabilize_Manual(void)
 {
@@ -63,20 +71,25 @@ void taskStabilize_Auto(void)
     }
     // 更新上次控制时间
     last_ctrl_ms = current_ms;
-    move.setTargetPosition(0, 0, 1.0f); // 这里可以根据需要设置目标位置
+
+    Pose guide_pose = path1.getCurrentGuidePose();
+
+    move.setTargetPosition(guide_pose.x, guide_pose.y, guide_pose.z); // 这里可以根据需要设置目标位置
+    //move.setTargetPosition(0, 0, 1.0f); // 设置目标位置为(0, 0, 1.0)，即在Z轴上升1米
     move.update();
 
     float rollCmd, pitchCmd, throttleCmd;
     move.getAttitudeCommand(rollCmd, pitchCmd, throttleCmd);
     chassis.setTargetAttitude(
-        rollCmd,
-        pitchCmd,
-        chassis.getTargetYaw()
+        rollCmd - 0.01745f * 0.2f,
+        pitchCmd + 0.01745f * 0.2f,
+        guide_pose.yaw
     );
 
     chassis.setThrottleOverride(
-        motor_smoother.update(throttleCmd + override_smoother.update(override_throttle))
+        throttleCmd + override_smoother.update(override_throttle)
     );
+    motor_smoother.update(throttleCmd + override_smoother.update(override_throttle));
 }
 
 void taskStabilize_Emergency(void)
@@ -108,10 +121,19 @@ void taskStabilize_Control(void)
     // 是否启动自动控制
     bool activate_auto = activate_stabilize && (GS_SWITCH(1));
 
+    // 强制紧急
+    bool force_emergency = GS_SWITCH(2);
+
     // 若手柄未链接，则进入紧急状态
     if(!gs_is_connected)
     {
         // 进入紧急状态
+        taskStabilize_Emergency();
+        return;
+    }
+    if(force_emergency)
+    {
+        // 强制进入紧急状态
         taskStabilize_Emergency();
         return;
     }
@@ -147,8 +169,7 @@ void taskStabilize(void *argument)
     osDelay(1000);
     taskStabilize_Init();
     osDelay(1000);
-    chassis.setThrottleMode(ThrottleMode::DIRECT);
-
+    
     while (1)
     {
         taskStabilize_Control();

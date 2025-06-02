@@ -4,7 +4,9 @@
 
 // 默认构造函数
 Point::Point() 
-    : target_pose_(), tolerance_(), counter_(0) {
+    : target_pose_{0.0f, 0.0f, 0.0f, 0.0f}, 
+      tolerance_{0.1f, 0.1f, 10}, 
+      counter_(0) {
 }
 
 // 参数构造函数

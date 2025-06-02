@@ -7,18 +7,7 @@
 
 // 默认构造函数
 Path::Path() 
-    : target_count_(0), guide_point_(), guide_tolerance_(0.02f, 0.05f, 5),
-      current_target_index_(0), current_step_(0), total_steps_(0), step_distance_(0.0f),
-      state_(PathState::IDLE), start_pose_(), end_pose_() {
-    // 初始化目标点指针数组为nullptr
-    for (uint32_t i = 0; i < MAX_TARGET_POINTS; ++i) {
-        target_points_[i] = nullptr;
-    }
-}
-
-// 参数构造函数
-Path::Path(const ToleranceParams& guide_tolerance)
-    : target_count_(0), guide_point_(), guide_tolerance_(guide_tolerance),
+    : target_count_(0), guide_point_(),
       current_target_index_(0), current_step_(0), total_steps_(0), step_distance_(0.0f),
       state_(PathState::IDLE), start_pose_(), end_pose_() {
     // 初始化目标点指针数组为nullptr
@@ -50,11 +39,6 @@ void Path::clearTargetPoints() {
 // 获取目标点数量
 uint32_t Path::getTargetCount() const {
     return target_count_;
-}
-
-// 设置引导点容差参数
-void Path::setGuideParameters(const ToleranceParams& tolerance) {
-    guide_tolerance_ = tolerance;
 }
 
 // 开始路径跟踪
@@ -209,7 +193,7 @@ void Path::updateGuidePoint() {
             return;
         }
         
-        // 设置引导点为目标点，等待稳定
+        // 设置引导点为目标点，使用目标点自身的容差
         guide_point_.setTargetPose(target_points_[current_target_index_]->getTargetPose());
         guide_point_.setToleranceParams(target_points_[current_target_index_]->getToleranceParams());
         state_ = PathState::MOVING_TO_TARGET;
@@ -219,6 +203,10 @@ void Path::updateGuidePoint() {
         float ratio = (float)current_step_ / (float)total_steps_;
         Pose next_guide_pose = interpolatePose(start_pose_, end_pose_, ratio);
         guide_point_.setTargetPose(next_guide_pose);
+        // 在目标点之间移动时，使用即将到达的目标点的容差
+        if (current_target_index_ + 1 < target_count_) {
+            guide_point_.setToleranceParams(target_points_[current_target_index_ + 1]->getToleranceParams());
+        }
         guide_point_.resetCounter();
     }
 }
@@ -231,8 +219,8 @@ Pose Path::interpolatePose(const Pose& start, const Pose& end, float ratio) {
     result.z = start.z + (end.z - start.z) * ratio;
     
     // 角度插值需要考虑角度环绕
-    float yaw_diff = math_normalize_radian_pi(end.yaw - start.yaw);
-    result.yaw = math_normalize_radian_pi(start.yaw + yaw_diff * ratio);
+    //float yaw_diff = math_normalize_radian_pi(end.yaw - start.yaw);
+    result.yaw = math_normalize_radian_pi(end.yaw);
     
     return result;
 }
@@ -251,8 +239,7 @@ void Path::moveToNextSegment() {
     
     calculateInterpolationParams(start_pose_, end_pose_);
     
-    // 设置引导点容差参数
-    guide_point_.setToleranceParams(guide_tolerance_);
+    // 引导点容差将在updateGuidePoint中设置为目标点的容差
     
     state_ = PathState::MOVING_BETWEEN_TARGETS;
     updateGuidePoint();

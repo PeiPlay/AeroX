@@ -7,6 +7,8 @@ __weak void taskManager_Init(void* argument)
     lidar.init();
     osDelay(5);
     lidar.start();
+    osDelay(5);
+    hc12.init();
     //upt201.init();
     //osDelay(5);
     //upt201.start();

@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 // 滤波器配置
-#define LIDAR_POSITION_FILTER_SIZE 10  // 位置滑动均值滤波器大小，可修改
-#define LIDAR_VELOCITY_LOWPASS_ALPHA 0.4f  // 速度一阶低通滤波器系数初始值 (0-1, 越小滤波越强)
+#define LIDAR_POSITION_FILTER_SIZE 2  // 位置滑动均值滤波器大小，可修改
+#define LIDAR_VELOCITY_LOWPASS_ALPHA 0.6f  // 速度一阶低通滤波器系数初始值 (0-1, 越小滤波越强)
 
 // DMA接收配置
 #define LIDAR_DMA_BUFFER_SIZE 32      // DMA接收缓冲区大小

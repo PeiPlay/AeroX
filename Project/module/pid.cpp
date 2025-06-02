@@ -100,12 +100,13 @@ float PID_Update(PidController_t *pid, float actual, PidMode_e mode, PidType_e t
     pid->status.actual = actual;
     pid->status.error = pid->status.target - actual;
     
-    // 误差死区处理
-    if (fabsf(pid->status.error) <= pid->config.errorDeadband) {
-        pid->status.error = 0.0f;
+    // 计算用于积分项的误差（应用死区处理）
+    float integralError = pid->status.error;
+    if (fabsf(integralError) <= pid->config.errorDeadband) {
+        integralError = 0.0f;
     }
     
-    // 积分项计算 - 只有在使用PI或PID时才计算
+    // 积分项计算 - 只有在使用PI或PID时才计算，使用经过死区处理的误差
     if ((type == PID_TYPE_PI || type == PID_TYPE_PID) && pid->config.ki != 0.0f) {
         // 积分分离
         if (pid->config.integralSeparationThreshold <= 0.0f || 
@@ -114,21 +115,21 @@ float PID_Update(PidController_t *pid, float actual, PidMode_e mode, PidType_e t
             // 积分抗饱和处理
             if (!pid->config.antiSaturationEnabled || 
                 (pid->status.output < pid->config.maxOutput && pid->status.output > -pid->config.maxOutput)) {
-                pid->status.integral += pid->status.error;
+                pid->status.integral += integralError;  // 使用经过死区处理的误差
             }
             
             // 积分限幅
-            if (pid->status.integral > pid->config.maxIntegral) {
-                pid->status.integral = pid->config.maxIntegral;
-            } else if (pid->status.integral < -pid->config.maxIntegral) {
-                pid->status.integral = -pid->config.maxIntegral;
+            if ((pid->status.integral * pid->config.ki) > pid->config.maxIntegral) {
+                pid->status.integral = pid->config.maxIntegral / pid->config.ki;
+            } else if ((pid->status.integral * pid->config.ki) < -pid->config.maxIntegral) {
+                pid->status.integral = (-pid->config.maxIntegral) / pid->config.ki;
             }
         }
     }
     
-    // 微分项计算 - 只有在使用PD或PID时才计算
+    // 微分项计算 - 只有在使用PD或PID时才计算，使用原始误差
     if (type == PID_TYPE_PD || type == PID_TYPE_PID) {
-        pid->status.differential = pid->status.error - pid->status.lastError;
+        pid->status.differential = pid->status.error - pid->status.lastError;  // 使用原始误差
         
         // 微分滤波 - 使用二阶低通滤波器
         if (pid->config.diffFilterEnabled && pid->config.kd != 0.0f) {
@@ -138,9 +139,9 @@ float PID_Update(PidController_t *pid, float actual, PidMode_e mode, PidType_e t
         pid->status.differential = 0.0f;
     }
     
-    // 根据传入的模式参数计算输出
+    // 根据传入的模式参数计算输出，比例项和微分项都使用原始误差
     if (mode == PID_POSITION) {
-        // 位置式PID
+        // 位置式PID - 比例项使用原始误差
         pid->status.output = pid->config.kp * pid->status.error;
         
         if (type == PID_TYPE_PI || type == PID_TYPE_PID) {
@@ -151,11 +152,11 @@ float PID_Update(PidController_t *pid, float actual, PidMode_e mode, PidType_e t
             pid->status.output += pid->config.kd * pid->status.differential;
         }
     } else { // PID_INCREMENTAL
-        // 增量式PID
+        // 增量式PID - 比例项使用原始误差
         float increment = pid->config.kp * (pid->status.error - pid->status.lastError);
         
         if (type == PID_TYPE_PI || type == PID_TYPE_PID) {
-            increment += pid->config.ki * pid->status.error;
+            increment += pid->config.ki * integralError;  // 积分项使用经过死区处理的误差
         }
         
         if (type == PID_TYPE_PD || type == PID_TYPE_PID) {

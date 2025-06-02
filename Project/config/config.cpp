@@ -47,3 +47,45 @@ PidController pid_y_pos(CONFIG_PID_Y_POS_SET);
 PidController pid_z_pos(CONFIG_PID_Z_POS_SET);
 
 Move move(CONFIG_MOVE_SET);
+
+Point point_begin(CONFIG_POINT_BEGIN_POSE_SET, CONFIG_POINT_PREPARE_TOLERANCE_SET);
+Point point_begin2(CONFIG_POINT_BEGIN2_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_BEGIN_SET);
+Point point_stable1(CONFIG_POINT_STABLE1_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_STABLE_SET);
+Point point_task3(CONFIG_POINT_TASK3_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_1_SET);
+Point point_task4(CONFIG_POINT_TASK4_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_2_SET);
+Point point_task5(CONFIG_POINT_TASK5_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_2_SET);
+Point point_end1(CONFIG_POINT_END_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_2_SET);
+Point point_stable2(CONFIG_POINT_STABLE2_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_STABLE_SHORT_SET);
+Point point_task5_2(CONFIG_POINT_TASK5_2_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_1_SET);
+Point point_stable3(CONFIG_POINT_STABLE3_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_STABLE_SHORT_SET);
+Point point_task5_3(CONFIG_POINT_TASK5_3_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_1_SET);
+Point point_stable4(CONFIG_POINT_STABLE4_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_STABLE_SHORT_SET);
+Point point_task5_4(CONFIG_POINT_TASK5_4_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_2_SET);
+Point point_end2(CONFIG_POINT_END_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_2_SET);
+Point point_stop(CONFIG_POINT_STOP_POSE_SET, CONFIG_POINT_GENERAL_TOLERANCE_STOP_SET);
+/*
+
+extern Point point_begin;
+extern Point point_begin2;
+extern Point point_stable1;
+extern Point point_task3;
+extern Point point_task4;
+extern Point point_task5;
+extern Point point_end1;
+extern Point point_stable2;
+
+extern Point point_task5_2;
+extern Point point_stable3;
+
+extern Point point_task5_3;
+extern Point point_stable4;
+
+extern Point point_task5_4;
+
+
+extern Point point_end2;
+extern Point point_stop;
+*/
+Path path1;
+
+HC12 hc12(&huart3, GPIOE, GPIO_PIN_15); // HC-12 SET引脚连接到PE15

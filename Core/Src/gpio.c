@@ -52,13 +52,16 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOE, PE3_NRF_CE_Pin|PE3_NRF_CS_Pin|PB15_HC_SET_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOE, PE3_NRF_CE_Pin|PE3_NRF_CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOC, PC0_SPI2_CS0_Pin|PC3_SPI2_CS1_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOA, PA0_SPI6_NSS_Pin|PA3_PMW_RST_Pin|PA4_SPI1_CS_Pin|PA15_SPI3_NSS_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(PB15_HC_SET_GPIO_Port, PB15_HC_SET_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : PEPin PEPin PEPin */
   GPIO_InitStruct.Pin = PE3_NRF_CE_Pin|PE3_NRF_CS_Pin|PB15_HC_SET_Pin;

@@ -8,7 +8,7 @@
 #define GUIDE_POINT_INTERVAL 0.05f
 
 // 最大目标点数量
-#define MAX_TARGET_POINTS 16
+#define MAX_TARGET_POINTS 30
 
 // 路径状态枚举
 enum class PathState {
@@ -25,7 +25,6 @@ private:
     uint32_t target_count_;                   // 实际目标点数量
     
     Point guide_point_;                       // 引导点（单一实例）
-    ToleranceParams guide_tolerance_;         // 引导点容差参数
     
     uint32_t current_target_index_;           // 当前目标点索引
     uint32_t current_step_;                   // 当前插值步数
@@ -39,7 +38,6 @@ private:
 public:
     // 构造函数
     Path();
-    Path(const ToleranceParams& guide_tolerance);
     
     // 添加目标点
     bool addTargetPoint(Point* point);
@@ -49,9 +47,6 @@ public:
     
     // 获取目标点数量
     uint32_t getTargetCount() const;
-    
-    // 设置引导点容差参数
-    void setGuideParameters(const ToleranceParams& tolerance);
     
     // 开始路径跟踪
     void startPath();

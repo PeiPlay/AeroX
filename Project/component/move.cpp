@@ -80,9 +80,10 @@ void Move::setPositionControlMode(bool use_position_control) {
 }
 
 void Move::getCurrentPosition(float& x, float& y, float& z) const {
-    x = status_.currentX_ground;
-    y = status_.currentY_ground;
-    z = status_.currentZ_ground;
+    LidarPoseData pose_data = config_.lidar->getPoseData();
+    x = pose_data.x - status_.offsetX; // 使用偏移量调整位置
+    y = pose_data.y - status_.offsetY;
+    z = pose_data.z - status_.offsetZ;
 }
 
 void Move::getCurrentVelocity(float& vx, float& vy, float& vz) const {
@@ -146,26 +147,41 @@ void Move::update() {
     // 4. 内环PID (速度环) -> 姿态指令 (使用机身坐标系速度)
     // X速度控制 -> 横滚角指令 (机体坐标系中，X正方向对应机体前方)
     if (config_.velocityPIDs[PID_X_VELOCITY]) {
-        status_.rollCmd = config_.velocityPIDs[PID_X_VELOCITY]->update(
-            status_.targetVxCmd, status_.currentVx_body);
+        status_.rollCmd_far = status_.rollCmd_prev; // 保存前两帧的横滚角指令
+        status_.rollCmd_prev = status_.rollCmd_last; // 保存上一帧的横滚角指令
+        status_.rollCmd_last = status_.rollCmd_now; // 更新上一帧的横滚角指令
+
+        status_.rollCmd_now = config_.velocityPIDs[PID_X_VELOCITY]->update(
+        status_.targetVxCmd, status_.currentVx_body);
     }
 
     // Y速度控制 -> 俯仰角指令 (机体坐标系中，Y正方向对应机体右侧)
     if (config_.velocityPIDs[PID_Y_VELOCITY]) {
-        status_.pitchCmd = config_.velocityPIDs[PID_Y_VELOCITY]->update(
-            status_.targetVyCmd, status_.currentVy_body);
+        status_.pitchCmd_far = status_.pitchCmd_prev; // 保存前两帧的俯仰角指令
+        status_.pitchCmd_prev = status_.pitchCmd_last; // 保存上一帧的俯仰角指令
+        status_.pitchCmd_last = status_.pitchCmd_now; // 更新上一帧的俯仰角指令
+
+        status_.pitchCmd_now = config_.velocityPIDs[PID_Y_VELOCITY]->update(
+        status_.targetVyCmd, status_.currentVy_body);
     }
 
     // Z速度控制 -> 油门指令
     if (config_.velocityPIDs[PID_Z_VELOCITY]) {
-        status_.throttleCmd = config_.velocityPIDs[PID_Z_VELOCITY]->update(
+        status_.throttleCmd_far = status_.throttleCmd_prev; // 保存前两帧的油门指令
+        status_.throttleCmd_prev = status_.throttleCmd_last; // 保存上一帧的油门指令
+        status_.throttleCmd_last = status_.throttleCmd_now; // 更新上一帧的油门指令
+
+        status_.throttleCmd_now = config_.velocityPIDs[PID_Z_VELOCITY]->update(
             status_.targetVzCmd, status_.currentVz_body);
     }
+    float rollCmd_current = 0.4f * status_.rollCmd_now + 0.3f * status_.rollCmd_last + 0.2f * status_.rollCmd_prev + 0.1f * status_.rollCmd_far;
+    float pitchCmd_current = 0.4f * status_.pitchCmd_now + 0.3f * status_.pitchCmd_last + 0.2f * status_.pitchCmd_prev + 0.1f * status_.pitchCmd_far;
+    float throttleCmd_current = 0.4f * status_.throttleCmd_now + 0.3f * status_.throttleCmd_last + 0.2f * status_.throttleCmd_prev + 0.1f * status_.throttleCmd_far;
 
     // 5. 限制输出范围
-    status_.rollCmd = constrain(status_.rollCmd, -M_PI/6, M_PI/6);   // ±30度
-    status_.pitchCmd = constrain(status_.pitchCmd, -M_PI/6, M_PI/6); // ±30度
-    status_.throttleCmd = constrain(status_.throttleCmd, -50.0f, 50.0f); // 相对油门调整
+    status_.rollCmd = constrain(rollCmd_current, -M_PI/6, M_PI/6);   // ±30度
+    status_.pitchCmd = -constrain(pitchCmd_current, -M_PI/6, M_PI/6); // ±30度
+    status_.throttleCmd = constrain(throttleCmd_current, -50.0f, 50.0f); // 相对油门调整
 }
 
 void Move::reset() {
