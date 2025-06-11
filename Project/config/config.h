@@ -106,7 +106,7 @@ extern SdcDualMotor motor_4;
 #define CONFIG_PID_YAW_RAD_SET                                      \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 5.2f, .ki = 0.0f, .kd = 0.9f,                  \
+        .kp = 5.2f, .ki = 0.0f, .kd = 0.9f,                         \
         .maxOutput = 3.5f, .maxIntegral = 0.0f,                     \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
@@ -169,8 +169,8 @@ extern Chassis chassis;
 #define CONFIG_PID_X_VEL_SET                                        \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.2f, .ki = 0.0f, .kd = 0.01f,                         \
-        .maxOutput = 0.25f, .maxIntegral = 0.0f,                     \
+        .kp = 0.2f, .ki = 0.0f, .kd = 0.01f,                        \
+        .maxOutput = 0.25f, .maxIntegral = 0.0f,                    \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -178,8 +178,8 @@ extern Chassis chassis;
 #define CONFIG_PID_Y_VEL_SET                                        \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 0.2f, .ki = 0.0f, .kd = 0.01f,                         \
-        .maxOutput = 0.25f, .maxIntegral = 0.0f,                     \
+        .kp = 0.2f, .ki = 0.0f, .kd = 0.01f,                        \
+        .maxOutput = 0.25f, .maxIntegral = 0.0f,                    \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -187,8 +187,8 @@ extern Chassis chassis;
 #define CONFIG_PID_Z_VEL_SET                                        \
     (PidConfig_t)                                                   \
     {                                                               \
-        .kp = 4.5f, .ki = 0.0f, .kd = 0.5f,                         \
-        .maxOutput = 40.0f, .maxIntegral = 0.0f,                     \
+        .kp = 4.1f, .ki = 0.0f, .kd = 0.5f,                         \
+        .maxOutput = 30.0f, .maxIntegral = 0.0f,                    \
         .integralSeparationThreshold = 0.0f, .errorDeadband = 0.0f, \
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
@@ -215,13 +215,13 @@ extern PidController pid_z_vel;
         .antiSaturationEnabled = 0, .diffFilterEnabled = 0,         \
     }
 
-#define CONFIG_PID_Z_POS_SET                                        \
-    (PidConfig_t)                                                   \
-    {                                                               \
+#define CONFIG_PID_Z_POS_SET                                         \
+    (PidConfig_t)                                                    \
+    {                                                                \
         .kp = 1.2f, .ki = 0.05f, .kd = 0.2f,                         \
-        .maxOutput = 1.5f, .maxIntegral = 0.8f,                     \
+        .maxOutput = 1.5f, .maxIntegral = 0.8f,                      \
         .integralSeparationThreshold = 1.0f, .errorDeadband = 0.05f, \
-        .antiSaturationEnabled = 1, .diffFilterEnabled = 0,         \
+        .antiSaturationEnabled = 1, .diffFilterEnabled = 0,          \
     }
 
 extern PidController pid_x_pos;
@@ -242,47 +242,42 @@ extern PidController pid_z_pos;
 extern Move move;
 
 #define CONFIG_POINT_PREPARE_TOLERANCE_SET (ToleranceParams){ \
-    .err_r = 5.0f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold =300                          \
-}
+    .err_r = 5.0f,                                            \
+    .err_yaw = 0.4,                                           \
+    .threshold = 300}
 
 #define CONFIG_POINT_GENERAL_TOLERANCE_1_SET (ToleranceParams){ \
-    .err_r = 0.5f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold = 1                          \
-}
+    .err_r = 0.5f,                                              \
+    .err_yaw = 0.4,                                             \
+    .threshold = 1}
 #define CONFIG_POINT_GENERAL_TOLERANCE_BEGIN_SET (ToleranceParams){ \
-    .err_r = 5.0f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold = 10                          \
-}
+    .err_r = 5.0f,                                                  \
+    .err_yaw = 0.4,                                                 \
+    .threshold = 10}
 
 #define CONFIG_POINT_GENERAL_TOLERANCE_STABLE_SET (ToleranceParams){ \
-    .err_r = 5.0f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold = 600                          \
-}
+    .err_r = 5.0f,                                                   \
+    .err_yaw = 0.4,                                                  \
+    .threshold = 50}
 
 #define CONFIG_POINT_GENERAL_TOLERANCE_STABLE_SHORT_SET (ToleranceParams){ \
-    .err_r = 5.0f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold = 150                          \
-}
+    .err_r = 5.0f,                                                         \
+    .err_yaw = 0.4,                                                        \
+    .threshold = 150}
 
 #define CONFIG_POINT_GENERAL_TOLERANCE_STOP_SET (ToleranceParams){ \
-    .err_r = 5.0f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold = 10                          \
-}
+    .err_r = 5.0f,                                                 \
+    .err_yaw = 0.4,                                                \
+    .threshold = 10}
 
 #define CONFIG_POINT_GENERAL_TOLERANCE_2_SET (ToleranceParams){ \
-    .err_r = 0.5f,                          \
-    .err_yaw = 0.4,                         \
-    .threshold = 1                          \
-}
-
-
+    .err_r = 0.5f,                                              \
+    .err_yaw = 0.4,                                             \
+    .threshold = 1}
+#define CONFIG_POINT_GENERAL_TOLERANCE_CLIMB_SET (ToleranceParams){ \
+    .err_r = 5.0f,                                                  \
+    .err_yaw = 0.4,                                                 \
+    .threshold = 10}
 
 #define CONFIG_POINT_BEGIN_POSE_SET (Pose){ \
     .x = 0.0f,                              \
@@ -291,96 +286,113 @@ extern Move move;
     .yaw = 0.0f}
 
 #define CONFIG_POINT_BEGIN2_POSE_SET (Pose){ \
-    .x = 0.0f,                              \
-    .y = 0.0f,                              \
-    .z = 1.0f,                              \
+    .x = 0.0f,                               \
+    .y = 0.0f,                               \
+    .z = 1.0f,                               \
     .yaw = 0.0f}
 
 #define CONFIG_POINT_STABLE1_POSE_SET (Pose){ \
-    .x = 0.0f,                              \
-    .y = 0.10f,                              \
-    .z = 0.95f,                              \
+    .x = 0.0f,                                \
+    .y = 0.10f,                               \
+    .z = 0.95f,                               \
     .yaw = 0.0f}
 
 #define CONFIG_POINT_TASK3_POSE_SET (Pose){ \
     .x = 0.0f,                              \
-    .y = /*6.4f*/ 5.6f,                              \
+    .y = 6.4f - 0.4f,                       \
     .z = 1.0f,                              \
     .yaw = 0.0f}
 
+// T3点完成后悬停一会
+#define CONFIG_POINT_CLIMB_PREPARE_POSE_SET (Pose){ \
+    .x = 0.0f,                                      \
+    .y = 6.4f - 0.4f,                               \
+    .z = 1.0f,                                      \
+    .yaw = -1.57f}
+// 悬停后进行爬升
+#define CONFIG_POINT_CLIMB_POINT1_POSE_SET (Pose){ \
+    .x = 0.0f,                                     \
+    .y = 6.4f - 0.4f,                              \
+    .z = 1.0f + 0.8f+0.5f,                              \
+    .yaw = -1.57f}
+//
+#define CONFIG_POINT_CLIMB_POINT2_POSE_SET (Pose){ \
+    .x = -4.49f,                                   \
+    .y = 6.4f - 0.4f,                              \
+    .z = 1.0f + 0.8f+0.5f,                         \
+    .yaw = -1.57f}
+
+//
+#define CONFIG_POINT_CLIMB_FINISH_POSE_SET (Pose){ \
+    .x = -4.49f,                                   \
+    .y = 6.4f - 0.4f,                              \
+    .z = 1.0f,                                     \
+    .yaw = -1.57f}
+
 #define CONFIG_POINT_TASK4_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.5f,                            \
-    .y = /*6.4f*/ 5.6f,                              \
+    .x = -4.49f /*-2.5f*/,                  \
+    .y = 6.4f - 0.4f /*5.6f*/,              \
     .z = 1.0f,                              \
     .yaw = -1.57f}
 
 #define CONFIG_POINT_TASK5_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.5f,                            \
-    .y = /*6.4f - 1.1f*/ 5.6f - 1.6f,                       \
+    .x = -4.49f /*-2.5f*/,                  \
+    .y = 6.4f - 1.1f /*5.6f - 1.6f*/,       \
     .z = 1.0f,                              \
-    .yaw = -1.57f-1.57f}
+    .yaw = -1.57f - 1.57f}
 
-#define CONFIG_POINT_END_POSE_SET (Pose){ \
-    .x = /*-4.49f*/-2.5f,                          \
-    .y = /*6.4f - 1.1f - 3.33f*/ 5.6f - 1.6f - 2.0f,             \
-    .z = 1.0f,                            \
-    .yaw = -1.57f-1.57f}
+#define CONFIG_POINT_END_POSE_SET (Pose){            \
+    .x = -4.49f /*-2.5f*/,                           \
+    .y = 6.4f - 1.1f - 3.33f /*5.6f - 1.6f - 2.0f*/, \
+    .z = 1.0f,                                       \
+    .yaw = -1.57f - 1.57f}
 
-#define CONFIG_POINT_STABLE2_POSE_SET (Pose){ \
-    .x = /*-4.49f*/-2.45f,                          \
-    .y = /*6.4f - 1.1f - 3.33f*/ 5.6f - 1.6f - 2.0f,             \
-    .z = 0.95f,                            \
-    .yaw = -1.57f-1.57f}
-
-
+#define CONFIG_POINT_STABLE2_POSE_SET (Pose){        \
+    .x = -4.49f /*-2.45f*/,                          \
+    .y = 6.4f - 1.1f - 3.33f /*5.6f - 1.6f - 2.0f*/, \
+    .z = 0.95f,                                      \
+    .yaw = -1.57f - 1.57f}
 
 #define CONFIG_POINT_TASK5_2_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.5f,                            \
-    .y = /*6.4f - 1.1f*/ 5.6f - 1.6f,                       \
-    .z = 1.0f,                              \
+    .x = -4.49f /*-2.5f*/,                    \
+    .y = 6.4f - 1.1f /*5.6f - 1.6f*/,         \
+    .z = 1.0f,                                \
     .yaw = 0.0f}
-
 
 #define CONFIG_POINT_STABLE3_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.55f,                            \
-    .y = /*6.4f - 1.1f - 3.33f*/ 5.6f - 1.6f,             \
-    .z = 0.95f,                            \
+    .x = -4.49f /*-2.55f*/,                   \
+    .y = 6.4f - 1.1f /*5.6f - 1.6f*/,         \
+    .z = 0.95f,                               \
     .yaw = 0.0f}
 
-
 #define CONFIG_POINT_TASK5_3_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.5f,                            \
-    .y = /*6.4f - 1.1f*/ 5.6f - 1.6f,                       \
-    .z = 0.5f,                              \
+    .x = -4.49f /*-2.5f*/,                    \
+    .y = 6.4f - 1.1f /*5.6f - 1.6f*/,         \
+    .z = 0.5f,                                \
     .yaw = 0.0f}
 
 #define CONFIG_POINT_STABLE4_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.55f,                            \
-    .y = /*6.4f - 1.1f - 3.33f*/ 5.6f - 1.6f,             \
-    .z = 0.49f,                            \
+    .x = -4.49f /*-2.55f*/,                   \
+    .y = 6.4f - 1.1f /*5.6f - 1.6f*/,         \
+    .z = 0.49f,                               \
     .yaw = 0.0f}
 
 #define CONFIG_POINT_TASK5_4_POSE_SET (Pose){ \
-    .x = /*-4.49f*/ -2.5f,                            \
-    .y = /*6.4f - 1.1f*/ 5.6f - 1.6f,                       \
-    .z = 1.0f,                              \
-    .yaw = -1.57f-1.57f}
+    .x = -4.49f /*-2.5f*/,                    \
+    .y = 6.4f - 1.1f /*5.6f - 1.6f*/,         \
+    .z = 1.0f,                                \
+    .yaw = -1.57f - 1.57f}
 
-
-
-
-#define CONFIG_POINT_STOP_POSE_SET (Pose){ \
-    .x = /*-4.49f*/-2.5f,                          \
-    .y = /*6.4f - 1.1f - 3.33f*/ 5.6f - 1.6f - 2.0f,             \
-    .z = -0.2f,                            \
-    .yaw = -1.57f-1.57f}
-
+#define CONFIG_POINT_STOP_POSE_SET (Pose){           \
+    .x = -4.49f /*-2.5f*/,                           \
+    .y = 6.4f - 1.1f - 3.33f /*5.6f - 1.6f - 2.0f*/, \
+    .z = -0.2f,                                      \
+    .yaw = -1.57f - 1.57f}
 
 #define CONFIG_POINT_GENERAL_TOLERANCE_SET (ToleranceParams){ \
-    .err_r = 0.6f,                          \
-    .err_yaw = 0.4,                        \
-    .threshold = 1                          \
-}
+    .err_r = 0.6f,                                            \
+    .err_yaw = 0.4,                                           \
+    .threshold = 1}
 
 /*
 y=560
@@ -397,6 +409,12 @@ extern Point point_begin;
 extern Point point_begin2;
 extern Point point_stable1;
 extern Point point_task3;
+
+extern Point point_climb_prepare;
+extern Point point_climb_point1;
+extern Point point_climb_point2;
+extern Point point_climb_finish;
+
 extern Point point_task4;
 extern Point point_task5;
 extern Point point_end1;
@@ -410,15 +428,12 @@ extern Point point_stable4;
 
 extern Point point_task5_4;
 
-
 extern Point point_end2;
 extern Point point_stop;
 
 extern Path path1;
 
 extern HC12 hc12;
-
-
 
 #endif
 

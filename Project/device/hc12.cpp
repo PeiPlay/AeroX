@@ -49,7 +49,7 @@ HAL_StatusTypeDef HC12::init()
     
     // SET引脚置高电平，退出AT模式
     HAL_GPIO_WritePin(set_port, set_pin, GPIO_PIN_SET);
-    osDelay(RESET_DELAY);
+    //osDelay(RESET_DELAY);
     
     return HAL_OK;
 }
@@ -390,7 +390,7 @@ HAL_StatusTypeDef HC12::transmitData(const uint8_t *data, uint16_t size)
         return HAL_ERROR;
     }
     
-    return HAL_UART_Transmit(huart, (uint8_t*)data, size, 1000);
+    return HAL_UART_Transmit(huart, (uint8_t*)data, size, 100);
 }
 
 /**

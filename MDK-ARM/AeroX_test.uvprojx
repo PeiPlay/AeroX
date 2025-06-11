@@ -1677,6 +1677,11 @@
           <GroupName>positioning</GroupName>
           <Files>
             <File>
+              <FileName>track.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>..\Project\positioning\track.cpp</FilePath>
+            </File>
+            <File>
               <FileName>path.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>..\Project\positioning\path.cpp</FilePath>
@@ -1695,11 +1700,6 @@
               <FileName>point.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Project\positioning\point.h</FilePath>
-            </File>
-            <File>
-              <FileName>track.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>..\Project\positioning\track.cpp</FilePath>
             </File>
             <File>
               <FileName>track.h</FileName>

@@ -3,6 +3,8 @@
 #include "config.h"
 #include "cmsis_os.h"
 #include "slope_smoother.h"
+#include <stdio.h>
+#include <string.h>
 
 PoseDiff pose_diff; // 用于存储位姿差值
 // ========== 任务初始化函数 ==========
@@ -48,6 +50,13 @@ extern Point point_end2;
 extern Point point_stop;
 */
 
+bool need_transmit = false; // 是否需要发送数据
+int64_t last_time_ms = 0;
+static unsigned char buf[] = "1131313131313123\r\n";
+static unsigned char write_buf[128] = {0};
+static int64_t start_time_ms = 0; // 任务开始时间
+
+HC12_Config_t hc12_config;
 static bool path_begin = false; // 路径是否已开始
 
 void taskMovement(void *argument)
@@ -56,6 +65,12 @@ void taskMovement(void *argument)
     path1.addTargetPoint(&point_begin2);
     path1.addTargetPoint(&point_stable1);
     path1.addTargetPoint(&point_task3);
+
+    path1.addTargetPoint(&point_climb_prepare);
+    path1.addTargetPoint(&point_climb_point1);
+    path1.addTargetPoint(&point_climb_point2);
+    path1.addTargetPoint(&point_climb_finish);
+
     path1.addTargetPoint(&point_task4);
     path1.addTargetPoint(&point_task5);
     path1.addTargetPoint(&point_end1);
@@ -68,7 +83,15 @@ void taskMovement(void *argument)
     path1.addTargetPoint(&point_end2);    
     path1.addTargetPoint(&point_stop);
 
+
     path1.startPath();
+
+    hc12.init(); // 初始化HC12通信模块
+    osDelay(20);
+    hc12.setBaudRate(HC12_BAUD_9600); // 设置波特率为115200
+    osDelay(20);
+    hc12.getAllParams(&hc12_config); // 获取当前配置
+
     // 等待系统稳定
     osDelay(1500);
     
@@ -81,11 +104,30 @@ void taskMovement(void *argument)
     // 主循环 - 50Hz更新频率
     while (1)
     {
+        
+        if(xTaskGetTickCount() - last_time_ms > 1000)
+        {
+            last_time_ms = xTaskGetTickCount();
+            if(need_transmit)
+            {
+                float time_used_s = (float)(xTaskGetTickCount() - start_time_ms) / 1000.0f;
+                sprintf((char*)write_buf, "mission accomplished: Team 8 : Date 2025/6/4 : Time used %.2f s\r\n", time_used_s);
+                hc12.transmitData((uint8_t*)write_buf, strlen((char*)write_buf));
+                need_transmit = false;
+            }
+        }
+
+        if(GS_FKEY(0))
+        {
+            need_transmit = true;
+        }
+
         if(path_begin == false)
         {
             if(GS_SWITCH(0) && GS_SWITCH(1))
             {
                 path_begin = true;
+                start_time_ms = xTaskGetTickCount();
             }
             osDelay(20);
             continue;
@@ -98,6 +140,8 @@ void taskMovement(void *argument)
         path1.isReached(current_pose, &pose_diff);
         // 20ms延迟，实现50Hz更新频率
         osDelay(20);
+        
+        
     }
 }
 }
